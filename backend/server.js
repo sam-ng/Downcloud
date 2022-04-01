@@ -3,6 +3,8 @@ const port = 8000
 
 const app = express()
 
+const clients = {}
+
 // Body parser
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -18,3 +20,5 @@ app.use('/doc', require('./routes/docRoutes'))
 app.listen(port, () => {
   console.log(`Server started on port: ${port}`)
 })
+
+module.exports = { clients }
