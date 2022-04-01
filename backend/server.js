@@ -22,8 +22,8 @@ app.use(cors())
 app.use('/connect', require('./routes/connectRoutes'))
 app.use('/op', require('./routes/opRoutes'))
 app.use('/doc', require('./routes/docRoutes'))
-app.use('/', (req, res) => {
-  res.send(200)
+app.get('/', (req, res) => {
+  res.sendStatus(200)
 })
 
 // Error handler

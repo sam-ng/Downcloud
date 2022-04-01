@@ -17,7 +17,8 @@
     "reconnecting-websocket": "^4.4.0",
     "rich-text": "^4.1.0",
     "sharedb": "^2.2.5",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "ws": "^8.5.0"
   },
   "devDependencies": {
     "browserify": "^17.0.0",
