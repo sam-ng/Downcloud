@@ -55,7 +55,7 @@ const openConnection = async (req, res) => {
     console.log(`${clientId} Connection closed`)
     delete clients[clientId]
   })
-  // res.sendStatus(200)
+  res.sendStatus(200)
 }
 
 module.exports = {
