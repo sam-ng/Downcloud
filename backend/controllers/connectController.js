@@ -2,20 +2,22 @@
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const WebSocket = require('ws')
-const ReconnectingWebSocket = require('reconnecting-websocket')
+// const ReconnectingWebSocket = require('reconnecting-websocket')
 sharedb.types.register(richText.type)
 
 const { clients } = require('../server')
 
-const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
-  WebSocket: WebSocket,
-  debug: true,
-  // reconnectInterval: 3000,
-})
+// const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
+//   WebSocket: WebSocket,
+//   debug: true,
+//   // reconnectInterval: 3000,
+// })
+const ws = new WebSocket('ws://localhost:8001')
 
-const connection = new sharedb.Connection(rws)
+const connection = new sharedb.Connection(ws)
 
 const openConnection = async (req, res) => {
+  console.log('opening connection')
   if (!req.params) throw new Error('No connection id specified.')
 
   const clientId = req.params.id
@@ -56,7 +58,6 @@ const openConnection = async (req, res) => {
     console.log(doc.data)
     res.set(headers)
     res.write(`data: ${JSON.stringify(doc.data.ops)}\n\n`)
-    res.end()
   })
 
   req.on('close', () => {
