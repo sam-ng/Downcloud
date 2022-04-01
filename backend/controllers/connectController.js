@@ -2,19 +2,18 @@
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const WebSocket = require('ws')
-// const ReconnectingWebSocket = require('reconnecting-websocket')
+const ReconnectingWebSocket = require('reconnecting-websocket')
 sharedb.types.register(richText.type)
 
 const { clients } = require('../server')
 
-// const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
-//   WebSocket: WebSocket,
-//   debug: true,
-//   // reconnectInterval: 3000,
-// })
-const ws = new WebSocket('ws://localhost:8001')
+const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
+  WebSocket: WebSocket,
+  debug: true,
+  // reconnectInterval: 3000,
+})
 
-const connection = new sharedb.Connection(ws)
+const connection = new sharedb.Connection(rws)
 
 const openConnection = async (req, res) => {
   console.log('opening connection')
