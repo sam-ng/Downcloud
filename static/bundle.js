@@ -14444,6 +14444,7 @@ fetch(`${SERVER_URL}/connect/${ID}`, { mode: 'cors' }).then((data) => {
   })
 
   evtSource.onmessage = (event) => {
+    console.log(event.data)
     if (event.data.content) quill.setContents(event.data.content)
   }
 })

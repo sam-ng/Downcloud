@@ -15,7 +15,6 @@ doc.fetch((err) => {
   if (err) throw err
   if (doc.type === null) {
     doc.create([{ insert: 'Hi!' }], 'rich-text')
-    console.log('create doc')
   }
 
   // start server

@@ -10,13 +10,6 @@ const { clients } = require('../server')
 const openConnection = async (req, res) => {
   if (!req.params) throw new Error('No connection id specified.')
 
-  const headers = {
-    'Content-Type': 'text/event-stream',
-    Connection: 'keep-alive',
-    'Cache-Control': 'no-cache',
-  }
-  res.set(headers)
-
   const clientId = req.params.id
 
   const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
@@ -36,16 +29,28 @@ const openConnection = async (req, res) => {
     if (err) throw err
     // propagate document deltas to all clients
     for (const id in clients) {
+      if (id === clientId) continue
       console.log('sending')
-      console.log(doc.data)
-      clients[id].res.json({ data: doc.data })
+      console.log(doc.data.ops)
+      const headers = {
+        'Content-Type': 'text/event-stream',
+        Connection: 'keep-alive',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': 'http://localhost:8000',
+      }
+
+      // doc.on('op', (op, source) => {
+      //   if (source === quill)
+      // })
+      res.set(headers)
+      clients[id].res.json({ data: { content: doc.data.ops } })
     }
   })
 
-  // req.on('close', () => {
-  //   console.log(`${clientId} Connection closed`)
-  //   clients = clients.filter((client) => client.id !== clientId)
-  // })
+  req.on('close', () => {
+    console.log(`${clientId} Connection closed`)
+    delete clients[clientId]
+  })
   // res.sendStatus(200)
 }
 
