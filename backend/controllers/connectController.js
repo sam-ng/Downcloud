@@ -7,37 +7,30 @@ sharedb.types.register(richText.type)
 
 const { clients } = require('../server')
 
+const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
+  WebSocket: WebSocket,
+  debug: true,
+  // reconnectInterval: 3000,
+})
+
+const connection = new sharedb.Connection(rws)
+
 const openConnection = async (req, res) => {
   if (!req.params) throw new Error('No connection id specified.')
 
-  const headers = {
-    'Content-Type': 'text/event-stream',
-    Connection: 'keep-alive',
-    'Cache-Control': 'no-cache',
-    'Access-Control-Allow-Origin': 'http://localhost:8000',
-  }
-  res.writeHead(200, headers)
-
   const clientId = req.params.id
 
-  const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
-    WebSocket: WebSocket,
-    debug: true,
-    // reconnectInterval: 3000,
-  })
-
-  const connection = new sharedb.Connection(rws)
   let doc = connection.get('collection', 'document')
 
   const clientObj = { doc, res }
-
   clients[clientId] = clientObj
+
   doc.subscribe((err) => {
     console.log('subscribe')
     if (err) throw err
-    if (doc.type === null) {
-      doc.create([{ insert: 'Hi!' }], 'rich-text')
-    }
+    // if (doc.type === null) {
+    //   doc.create([{ insert: 'Hi!' }], 'rich-text')
+    // }
     // propagate document deltas to all clients
     // for (const id in clients) {
     //   if (id === clientId) continue
@@ -54,16 +47,22 @@ const openConnection = async (req, res) => {
     //     `data: ${JSON.stringify({ content: doc.data.ops })}\n\n`
     //   )
     // }
+    const headers = {
+      'Content-Type': 'text/event-stream',
+      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': 'http://localhost:8000',
+    }
     console.log(doc.data)
-    res.write(`data: ${JSON.stringify({ content: doc.data.ops })}\n\n`)
+    res.set(headers)
+    res.write(`data: ${JSON.stringify(doc.data.ops)}\n\n`)
+    res.end()
   })
 
-  // req.on('close', () => {
-  //   console.log(`${clientId} Connection closed`)
-  //   delete clients[clientId]
-  // })
-
-  res.send(200)
+  req.on('close', () => {
+    console.log(`${clientId} Connection closed`)
+    delete clients[clientId]
+  })
 }
 
 module.exports = {

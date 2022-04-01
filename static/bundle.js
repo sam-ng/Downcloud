@@ -14430,6 +14430,7 @@ const SERVER_URL = 'http://localhost:8000'
 const ID = uuidv4()
 
 fetch(`${SERVER_URL}/connect/${ID}`, { mode: 'cors' }).then((data) => {
+  console.log('back from fetching')
   const evtSource = new EventSource(`${SERVER_URL}/connect/${ID}`)
 
   let quill = new Quill('#editor', { theme: 'snow' })
@@ -14444,8 +14445,10 @@ fetch(`${SERVER_URL}/connect/${ID}`, { mode: 'cors' }).then((data) => {
   })
 
   evtSource.onmessage = (event) => {
-    console.log(event.data)
-    if (event.data.content) quill.setContents(event.data.content)
+    const content = JSON.parse(event.data)
+    console.log(typeof content)
+    console.log(content)
+    quill.setContents(content)
   }
 })
 
