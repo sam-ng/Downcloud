@@ -1,16 +1,30 @@
 const express = require('express')
+const cors = require('cors')
+
 const port = 8000
 
 const app = express()
+
+const clients = {}
+module.exports = { clients }
 
 // Body parser
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
+// Serve static files
+app.use(express.static('static'))
+app.use(express.static('node_modules/quill/dist')) // for quill css
+
+app.use(cors())
+
 // Routes
 app.use('/connect', require('./routes/connectRoutes'))
 app.use('/op', require('./routes/opRoutes'))
 app.use('/doc', require('./routes/docRoutes'))
+app.get('/', (req, res) => {
+  res.sendStatus(200)
+})
 
 // Error handler
 // app.use(errorHandler)
