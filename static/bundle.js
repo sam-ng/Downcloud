@@ -14433,6 +14433,7 @@ fetch(`${SERVER_URL}/connect/${ID}`, { mode: 'cors' }).then((data) => {
   const evtSource = new EventSource(`${SERVER_URL}/connect/${ID}`)
 
   let quill = new Quill('#editor', { theme: 'snow' })
+  console.log('here')
 
   quill.on('text-change', (delta, oldDelta, source) => {
     // if (source !== user) return

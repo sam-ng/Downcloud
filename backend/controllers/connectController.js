@@ -10,6 +10,14 @@ const { clients } = require('../server')
 const openConnection = async (req, res) => {
   if (!req.params) throw new Error('No connection id specified.')
 
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    Connection: 'keep-alive',
+    'Cache-Control': 'no-cache',
+    'Access-Control-Allow-Origin': 'http://localhost:8000',
+  }
+  res.set(headers)
+
   const clientId = req.params.id
 
   const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
@@ -32,18 +40,14 @@ const openConnection = async (req, res) => {
       if (id === clientId) continue
       console.log('sending')
       console.log(doc.data.ops)
-      const headers = {
-        'Content-Type': 'text/event-stream',
-        Connection: 'keep-alive',
-        'Cache-Control': 'no-cache',
-        'Access-Control-Allow-Origin': 'http://localhost:8000',
-      }
 
       // doc.on('op', (op, source) => {
       //   if (source === quill)
       // })
-      res.set(headers)
-      clients[id].res.json({ data: { content: doc.data.ops } })
+      clients[id].res.set(headers)
+      clients[id].res.write(
+        `data: ${JSON.stringify({ content: doc.data.ops })}\n\n`
+      )
     }
   })
 
