@@ -16,7 +16,7 @@ const openConnection = async (req, res) => {
     'Cache-Control': 'no-cache',
     'Access-Control-Allow-Origin': 'http://localhost:8000',
   }
-  res.set(headers)
+  res.writeHead(200, headers)
 
   const clientId = req.params.id
 
@@ -32,30 +32,38 @@ const openConnection = async (req, res) => {
   const clientObj = { doc, res }
 
   clients[clientId] = clientObj
-
   doc.subscribe((err) => {
+    console.log('subscribe')
     if (err) throw err
-    // propagate document deltas to all clients
-    for (const id in clients) {
-      if (id === clientId) continue
-      console.log('sending')
-      console.log(doc.data.ops)
-
-      // doc.on('op', (op, source) => {
-      //   if (source === quill)
-      // })
-      clients[id].res.set(headers)
-      clients[id].res.write(
-        `data: ${JSON.stringify({ content: doc.data.ops })}\n\n`
-      )
+    if (doc.type === null) {
+      doc.create([{ insert: 'Hi!' }], 'rich-text')
     }
+    // propagate document deltas to all clients
+    // for (const id in clients) {
+    //   if (id === clientId) continue
+    //   console.log('sending')
+    //   console.log(doc.data.ops)
+
+    //   // doc.on('op', (op, source) => {
+    //   //   if (source === quill)
+    //   // })
+    //   console.log('writing message')
+
+    //   clients[id].res.set(headers)
+    //   clients[id].res.write(
+    //     `data: ${JSON.stringify({ content: doc.data.ops })}\n\n`
+    //   )
+    // }
+    console.log(doc.data)
+    res.write(`data: ${JSON.stringify({ content: doc.data.ops })}\n\n`)
   })
 
-  req.on('close', () => {
-    console.log(`${clientId} Connection closed`)
-    delete clients[clientId]
-  })
-  res.sendStatus(200)
+  // req.on('close', () => {
+  //   console.log(`${clientId} Connection closed`)
+  //   delete clients[clientId]
+  // })
+
+  res.send(200)
 }
 
 module.exports = {
