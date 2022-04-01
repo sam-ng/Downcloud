@@ -14,12 +14,12 @@ const openConnection = async (req, res) => {
     Connection: 'keep-alive',
     'Cache-Control': 'no-cache',
   }
-  response.writeHead(200, headers)
+  res.writeHead(200, headers)
 
   const clientId = req.params.id
 
-  const rws = new ReconnectingWebSocket(`ws://${window.location.host}`)
-  const connection = sharedb.Connection(rws)
+  const rws = new ReconnectingWebSocket('ws://localhost:8001')
+  const connection = new sharedb.Connection(rws)
   let doc = connection.get('collection', 'document')
   doc.subscribe((err) => {
     if (err) throw err

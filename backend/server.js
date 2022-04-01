@@ -1,4 +1,6 @@
 const express = require('express')
+const cors = require('cors')
+
 const port = 8000
 
 const app = express()
@@ -13,6 +15,8 @@ app.use(express.urlencoded({ extended: false }))
 // Serve static files
 app.use(express.static('static'))
 app.use(express.static('node_modules/quill/dist')) // for quill css
+
+app.use(cors())
 
 // Routes
 app.use('/connect', require('./routes/connectRoutes'))
