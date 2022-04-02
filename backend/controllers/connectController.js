@@ -1,58 +1,99 @@
-// TODO: Async handler with error middleware
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
-const rws = new ReconnectingWebSocket('ws://localhost:8001', [], {
-  WebSocket: WebSocket,
-  debug: true,
-  // reconnectInterval: 3000,
-})
-
-sharedb.types.register(richText.type)
 const { clients } = require('../server')
 
+// Register rich text
+sharedb.types.register(richText.type)
+
+// HTTP event stream headers
+const headers = {
+  'Content-Type': 'text/event-stream',
+  Connection: 'keep-alive',
+  'Cache-Control': 'no-cache',
+  'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
+}
+
+// Open WebSocket connection to ShareDB server
+const rws = new ReconnectingWebSocket(
+  `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
+  [],
+  {
+    WebSocket: WebSocket,
+    debug: true,
+    // reconnectInterval: 3000,
+  }
+)
+
 const openConnection = async (req, res) => {
-  console.log('opening connection')
-  const connection = new sharedb.Connection(rws)
-  if (!req.params) throw new Error('No connection id specified.')
-
-  const clientId = req.params.id
-
-  let doc = connection.get('collection', 'document')
-
-  const clientObj = { clientId, res, connection, doc }
-  clients[clientId] = clientObj
-
-  const headers = {
-    'Content-Type': 'text/event-stream',
-    Connection: 'keep-alive',
-    'Cache-Control': 'no-cache',
-    'Access-Control-Allow-Origin': 'http://localhost:8000',
+  if (!req.params) {
+    throw new Error('No connection id specified.')
   }
 
-  doc.subscribe((err) => {
-    console.log('subscribe')
-    if (err) throw err
+  // Debug logging
+  console.log(`[connectController]: ${req.params.id} \n opening connection `)
 
+  // Get doc instance
+  const connection = new sharedb.Connection(rws)
+  const doc = connection.get(
+    process.env.CONNECTION_COLLECTION,
+    process.env.CONNECTION_ID
+  )
+
+  // Store client info
+  const clientID = req.params.id
+  const clientObj = { clientID, res, connection, doc }
+  clients[clientID] = clientObj
+
+  // Get inital doc data from server and listen for changes
+  doc.subscribe((err) => {
+    if (err) {
+      throw err
+    }
+
+    // Debug logging
+    console.log(`[connectController]: ${req.params.id} \n subscribe `)
+
+    // FIXME: remove
+    console.log(
+      `[connectController]: ${req.params.id} \n doc.data: ${JSON.stringify(
+        doc.data
+      )} `
+    )
+    console.log(
+      `[connectController]: ${req.params.id} \n doc.data.ops: ${JSON.stringify(
+        doc.data.ops
+      )} `
+    )
+
+    // Create event stream and initial doc data
     res.set(headers)
     res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
   })
 
+  // When we apply an op to the doc, update all other clients
   doc.on('op', (op, source) => {
-    // propagate document deltas to all other clients
+    // FIXME: remove
+    console.log(
+      `[connectController]: ${req.params.id} \n op: ${JSON.stringify(op)} `
+    )
+    console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
+
     for (const id in clients) {
-      if (id === source) continue
-      console.log('Broadcasting to all other clients.')
-      console.log(op)
+      // Skip self
+      if (id === source) {
+        continue
+      }
 
       clients[id].res.write(`data: ${JSON.stringify(op)}\n\n`)
     }
-  })
 
-  req.on('close', () => {
-    console.log(`${clientId} Connection closed`)
-    delete clients[clientId]
+    // Client closed the connection
+    req.on('close', () => {
+      console.log(`[connectController]: ${req.params.id} \n connection closed `)
+      delete clients[clientID]
+    })
   })
 }
 

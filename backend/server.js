@@ -1,12 +1,17 @@
 const express = require('express')
 const cors = require('cors')
+const dotenv = require('dotenv').config()
+const port = process.env.SERVER_PORT || 8000
 
-const port = 8000
-
-const app = express()
-
+// Set up clients dictionary
 const clients = {}
 module.exports = { clients }
+
+// Express app
+const app = express()
+
+// CORS
+app.use(cors())
 
 // Body parser
 app.use(express.json())
@@ -15,8 +20,6 @@ app.use(express.urlencoded({ extended: false }))
 // Serve static files
 app.use(express.static('static'))
 app.use(express.static('node_modules/quill/dist')) // for quill css
-
-app.use(cors())
 
 // Routes
 app.use('/connect', require('./routes/connectRoutes'))
