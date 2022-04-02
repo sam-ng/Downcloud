@@ -12,12 +12,12 @@ const updateDocument = async (req, res) => {
   // Debug log
   console.log(
     `[opController]: ${req.params.id} \n submit op: ${JSON.stringify(
-      req.body.delta
+      req.body
     )} `
   )
 
   const clientID = req.params.id
-  clients[clientID].doc.submitOp(req.body.delta, { source: clientID })
+  clients[clientID].doc.submitOp(req.body, { source: clientID })
 
   res.sendStatus(200)
 }
