@@ -35,9 +35,8 @@ const openConnection = async (req, res) => {
     console.log('subscribe')
     if (err) throw err
 
-    console.log(doc.data)
     res.set(headers)
-    res.write(`data: ${JSON.stringify(doc.data.ops)}\n\n`)
+    res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
   })
 
   doc.on('op', (op, source) => {

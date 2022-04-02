@@ -14446,9 +14446,9 @@ quill.on('text-change', (delta, oldDelta, source) => {
 })
 
 evtSource.onmessage = (event) => {
-  const content = JSON.parse(event.data)
-  console.log(content)
-  quill.updateContents(content)
+  const data = JSON.parse(event.data)
+  if (data.content) quill.setContents(data.content)
+  else quill.updateContents(data)
 }
 
 },{"quill":4,"uuid":5}]},{},[20]);
