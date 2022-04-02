@@ -14434,17 +14434,21 @@ const evtSource = new EventSource(`${SERVER_URL}/connect/${ID}`)
 let quill = new Quill('#editor', { theme: 'snow' })
 
 quill.on('text-change', (delta, oldDelta, source) => {
-  // if (source !== user) return
-  // fetch(`${SERVER_URL}/op/${ID}`, {
-  //   method: 'POST',
-  //   mode: 'cors',
-  //   body: JSON.stringify(delta),
-  // })
+  if (source !== 'user') return
+  fetch(`${SERVER_URL}/op/${ID}`, {
+    method: 'POST',
+    body: JSON.stringify(delta),
+    headers: {
+      'Content-Type': 'application/json',
+      // 'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  })
 })
 
 evtSource.onmessage = (event) => {
-  const content = JSON.parse(event.data)
-  quill.setContents(content)
+  const data = JSON.parse(event.data)
+  if (data.content) quill.setContents(data.content)
+  else quill.updateContents(data)
 }
 
 },{"quill":4,"uuid":5}]},{},[20]);

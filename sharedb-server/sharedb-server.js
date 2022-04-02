@@ -21,7 +21,7 @@ doc.fetch((err) => {
   const app = express()
   const server = http.createServer(app)
 
-  const wss = new WebSocket.Server({ server: server })
+  const wss = new WebSocket.Server({ server })
   wss.on('connection', (ws) => {
     let stream = new WebSocketJSONStream(ws)
     backend.listen(stream)
