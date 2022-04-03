@@ -15,16 +15,17 @@ const headers = {
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
 }
 
-// Open WebSocket connection to ShareDB server
-const rws = new ReconnectingWebSocket(
-  `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
-  [],
-  {
-    WebSocket: WebSocket,
-    debug: true,
-    // reconnectInterval: 3000,
-  }
-)
+// // Open WebSocket connection to ShareDB server
+// const rws = new ReconnectingWebSocket(
+//   `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
+//   [],
+//   {
+//     WebSocket: WebSocket,
+//     debug: true,
+//     // reconnectInterval: 3000,
+//   }
+// )
+// const connection = new sharedb.Connection(rws)
 
 const openConnection = async (req, res) => {
   if (!req.params) {
@@ -34,8 +35,19 @@ const openConnection = async (req, res) => {
   // Debug logging
   console.log(`[connectController]: ${req.params.id} \n opening connection `)
 
-  // Get doc instance
+  // Open WebSocket connection to ShareDB server
+  const rws = new ReconnectingWebSocket(
+    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
+    [],
+    {
+      WebSocket: WebSocket,
+      debug: true,
+      // reconnectInterval: 3000,
+    }
+  )
   const connection = new sharedb.Connection(rws)
+
+  // Get doc instance
   const doc = connection.get(
     process.env.CONNECTION_COLLECTION,
     process.env.CONNECTION_ID
@@ -70,30 +82,32 @@ const openConnection = async (req, res) => {
     // Create event stream and initial doc data
     res.set(headers)
     res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
+
+    // When we apply an op to the doc, update all other clients
+    doc.on('op batch', (op, source) => {
+      // FIXME: remove
+      if (clientID === source) return
+      console.log(
+        `[connectController]: ${req.params.id} \n op: ${JSON.stringify(op)} `
+      )
+      console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
+
+      // for (const id in clients) {
+      //   // Skip self
+      //   if (id === source) {
+      //     continue
+      //   }
+
+      //   clients[id].res.write(`data: ${JSON.stringify(op)}\n\n`)
+      // }
+      res.write(`data: ${JSON.stringify(op)}\n\n`)
+    })
   })
 
-  // When we apply an op to the doc, update all other clients
-  doc.on('op', (op, source) => {
-    // FIXME: remove
-    console.log(
-      `[connectController]: ${req.params.id} \n op: ${JSON.stringify(op)} `
-    )
-    console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
-
-    for (const id in clients) {
-      // Skip self
-      if (id === source) {
-        continue
-      }
-
-      clients[id].res.write(`data: ${JSON.stringify(op)}\n\n`)
-    }
-
-    // Client closed the connection
-    req.on('close', () => {
-      console.log(`[connectController]: ${req.params.id} \n connection closed `)
-      delete clients[clientID]
-    })
+  // Client closed the connection
+  req.on('close', () => {
+    console.log(`[connectController]: ${req.params.id} \n connection closed `)
+    delete clients[clientID]
   })
 }
 
