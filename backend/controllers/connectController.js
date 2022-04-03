@@ -9,6 +9,7 @@ sharedb.types.register(richText.type)
 
 // HTTP event stream headers
 const headers = {
+  'X-CSE356': '61f9c5ceca96e9505dd3f8b4',
   'Content-Type': 'text/event-stream',
   Connection: 'keep-alive',
   'Cache-Control': 'no-cache',

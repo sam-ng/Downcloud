@@ -6,7 +6,7 @@ const SERVER_URL = `http://localhost:8000`
 const ID = uuidv4()
 
 // Set up event stream to listen to events from server
-const evtSource = new EventSource(`${SERVER_URL}/connect/${ID}`)
+const evtSource = new EventSource(`/connect/${ID}`)
 
 // Set up quill
 const quill = new Quill('#editor', { theme: 'snow' })
@@ -18,7 +18,7 @@ quill.on('text-change', (delta, oldDelta, source) => {
     return
   }
 
-  axios.post(`${SERVER_URL}/op/${ID}`, [delta])
+  axios.post(`/op/${ID}`, [delta])
 })
 
 // Update quill when message is received from server event stream
