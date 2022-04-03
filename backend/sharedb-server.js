@@ -23,7 +23,7 @@ doc.fetch((err) => {
 
   // Create a new doc if it doesn't exist
   if (doc.type === null) {
-    doc.create([{ insert: 'Hi!' }], 'rich-text')
+    doc.create([], 'rich-text')
   }
 
   // Start server
@@ -38,5 +38,5 @@ doc.fetch((err) => {
   })
 
   server.listen(port)
-  console.log(`Sharedb-server started on port: ${port}`)
+  // console.log(`Sharedb-server started on port: ${port}`)
 })

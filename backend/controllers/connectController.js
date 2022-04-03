@@ -22,16 +22,15 @@ const openConnection = async (req, res) => {
   }
 
   // Debug logging
-  console.log(`[connectController]: ${req.params.id} \n opening connection `)
+  // console.log(`[connectController]: ${req.params.id} \n opening connection `)
 
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
     `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
     [],
     {
-      WebSocket: WebSocket,
-      debug: true,
-      // reconnectInterval: 3000,
+      WebSocket: WebSocket
+      // debug: false,
     }
   )
   const connection = new sharedb.Connection(rws)
@@ -54,19 +53,19 @@ const openConnection = async (req, res) => {
     }
 
     // Debug logging
-    console.log(`[connectController]: ${req.params.id} \n subscribe `)
+    // console.log(`[connectController]: ${req.params.id} \n subscribe `)
 
-    // FIXME: remove
-    console.log(
-      `[connectController]: ${req.params.id} \n doc.data: ${JSON.stringify(
-        doc.data
-      )} `
-    )
-    console.log(
-      `[connectController]: ${req.params.id} \n doc.data.ops: ${JSON.stringify(
-        doc.data.ops
-      )} `
-    )
+    // // FIXME: remove
+    // console.log(
+    //   `[connectController]: ${req.params.id} \n doc.data: ${JSON.stringify(
+    //     doc.data
+    //   )} `
+    // )
+    // console.log(
+    //   `[connectController]: ${req.params.id} \n doc.data.ops: ${JSON.stringify(
+    //     doc.data.ops
+    //   )} `
+    // )
 
     // Create event stream and initial doc data
     res.set(headers)
@@ -76,10 +75,10 @@ const openConnection = async (req, res) => {
     doc.on('op', (op, source) => {
       // FIXME: remove
       if (clientID === source) return
-      console.log(
-        `[connectController]: ${req.params.id} \n op: ${JSON.stringify(op)} `
-      )
-      console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
+      // console.log(
+      //   `[connectController]: ${req.params.id} \n op: ${JSON.stringify([op])} `
+      // )
+      // console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
 
       res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
@@ -87,8 +86,9 @@ const openConnection = async (req, res) => {
 
   // Client closed the connection
   req.on('close', () => {
-    console.log(`[connectController]: ${req.params.id} \n connection closed `)
-    delete clients[clientID]
+    // console.log(`[connectController]: ${req.params.id} \n connection closed `)
+    res.end()
+    // delete clients[clientID]
   })
 }
 

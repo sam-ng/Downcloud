@@ -17,13 +17,16 @@ quill.on('text-change', (delta, oldDelta, source) => {
   if (source !== 'user') {
     return
   }
+  // console.log('Delta ' + JSON.stringify(delta))
+  // console.log('Delta ' + JSON.stringify(delta.ops))
 
-  axios.post(`/op/${ID}`, [delta])
+  axios.post(`/op/${ID}`, [delta.ops])
 })
 
 // Update quill when message is received from server event stream
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
+  // console.log(data)
   if (data.content) {
     // Set initial doc contents
     quill.setContents(data.content)
