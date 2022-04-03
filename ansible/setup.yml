@@ -1,0 +1,149 @@
+---
+- name: Automate project
+  hosts: project
+  remote_user: root
+  become: true
+  vars:
+    site: downcloud.cse356.compas.cs.stonybrook.edu
+    nginx_config: '{{ site }}'
+    repo_name: cse356-ms1
+    app_repo: git@github.com:Zharnite/{{ repo_name }}.git
+    nodejs_version: '16'
+    project_server: project-server
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # wait 1 day before running again
+
+    - name: Install and start nginx
+      block:
+        - name: Install nginx
+          apt:
+            name: nginx
+            state: latest
+
+        - name: Start nginx
+          service:
+            name: nginx
+            state: started
+
+    - name: Update firewall rules
+      block:
+        - name: Allow ssh
+          community.general.ufw:
+            rule: allow
+            port: '22'
+
+        - name: Allow dns
+          community.general.ufw:
+            rule: allow
+            port: '53'
+
+        - name: Allow http
+          community.general.ufw:
+            rule: allow
+            port: '80'
+
+        - name: Allow https
+          community.general.ufw:
+            rule: allow
+            port: '443'
+
+        - name: Set default rule
+          community.general.ufw:
+            default: deny
+
+        - name: Enable firewall
+          community.general.ufw:
+            state: enabled
+
+    - name: Install nodejs
+      block:
+        - name: Install nodejs gpg key
+          apt_key:
+            url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+            state: present
+
+        - name: Install nodejs repo
+          apt_repository:
+            repo: 'deb https://deb.nodesource.com/node_{{ nodejs_version }}.x {{ ansible_lsb.codename }} main'
+            state: present
+            update_cache: yes
+
+        - name: Install nodejs
+          apt:
+            name: nodejs
+            state: present
+
+    - name: Install pm2
+      command: npm install -g pm2
+
+    - name: Set up website
+      block:
+        - name: Install git repo
+          git:
+            repo: '{{ app_repo }}'
+            dest: /var/www/{{ repo_name }}
+            version: main
+            accept_hostkey: yes
+
+        - name: Rename repo
+          command: mv /var/www/{{ repo_name }} /var/www/{{ site }}
+
+        - name: Install packages based on package-lock.json
+          npm:
+            path: /var/www/{{ site }}
+            ci: yes
+
+    # - name: Run server with pm2
+    #   block:
+    #     - name: Delete old pm2 if it is running
+    #       command: pm2 delete {{ project_server }}
+    #       ignore_errors: yes
+
+    #     - name: Start pm2
+    #       shell: |
+    #         cd /var/www/{{ site }}
+    #         pm2 start "npm run server" --name {{ project_server }}
+    - name: Configure nginx
+      block:
+        - name: Unlink default nginx
+          file:
+            path: /etc/nginx/sites-enabled/default
+            state: absent
+
+        - name: Upload nginx.conf
+          copy:
+            src: nginx.conf
+            dest: /etc/nginx/sites-available/{{ nginx_config }}
+
+        - name: Link configuration
+          file:
+            src: /etc/nginx/sites-available/{{ nginx_config }}
+            dest: /etc/nginx/sites-enabled/{{ nginx_config }}
+            state: link
+
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
+#
+# BEFORE RUNNING SCRIPT
+# - Add deploy keys to repo (ssh-keygen in server)
+#
+# NOTES
+# Validate inventory and get info
+# ansible-inventory -i inventory --list
+#
+# Ping server
+# ansible project -i inventory -m ping -u root
+#
+# Run playbook
+# ansible-playbook -i inventory setup.yml
+#
+# Run playbook starting from
+# ansible-playbook -i inventory setup.yml --start-at-task="Install git repo"
+#
