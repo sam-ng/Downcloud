@@ -84,7 +84,7 @@ const openConnection = async (req, res) => {
     res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
     // When we apply an op to the doc, update all other clients
-    doc.on('op batch', (op, source) => {
+    doc.on('op', (op, source) => {
       // FIXME: remove
       if (clientID === source) return
       console.log(
@@ -100,7 +100,7 @@ const openConnection = async (req, res) => {
 
       //   clients[id].res.write(`data: ${JSON.stringify(op)}\n\n`)
       // }
-      res.write(`data: ${JSON.stringify(op)}\n\n`)
+      res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
 

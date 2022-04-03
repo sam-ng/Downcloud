@@ -17,7 +17,9 @@ const updateDocument = async (req, res) => {
   )
 
   const clientID = req.params.id
-  clients[clientID].doc.submitOp(req.body, { source: clientID })
+  req.body.forEach((oplist) => {
+    clients[clientID].doc.submitOp(oplist, { source: clientID })
+  })
 
   res.sendStatus(200)
 }
