@@ -15,18 +15,6 @@ const headers = {
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
 }
 
-// // Open WebSocket connection to ShareDB server
-// const rws = new ReconnectingWebSocket(
-//   `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
-//   [],
-//   {
-//     WebSocket: WebSocket,
-//     debug: true,
-//     // reconnectInterval: 3000,
-//   }
-// )
-// const connection = new sharedb.Connection(rws)
-
 const openConnection = async (req, res) => {
   if (!req.params) {
     throw new Error('No connection id specified.')
@@ -92,14 +80,6 @@ const openConnection = async (req, res) => {
       )
       console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
 
-      // for (const id in clients) {
-      //   // Skip self
-      //   if (id === source) {
-      //     continue
-      //   }
-
-      //   clients[id].res.write(`data: ${JSON.stringify(op)}\n\n`)
-      // }
       res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
