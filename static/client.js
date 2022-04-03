@@ -18,7 +18,7 @@ quill.on('text-change', (delta, oldDelta, source) => {
     return
   }
 
-  axios.post(`${SERVER_URL}/op/${ID}`, delta)
+  axios.post(`${SERVER_URL}/op/${ID}`, [delta])
 })
 
 // Update quill when message is received from server event stream
@@ -29,6 +29,6 @@ evtSource.onmessage = (event) => {
     quill.setContents(data.content)
   } else {
     // Update doc contents
-    quill.updateContents(data)
+    data.forEach((oplist) => quill.updateContents(oplist))
   }
 }

@@ -7,6 +7,7 @@ const getDocument = async (req, res) => {
     throw new Error('No connection id specified.')
   }
 
+  const clientID = req.params.id
   // FIXME: remove
   console.log(
     `[docController]: ${
@@ -16,12 +17,14 @@ const getDocument = async (req, res) => {
     )} `
   )
 
-  const clientID = req.params.id
-  const html = new QuillDeltaToHtmlConverter(
-    clients[clientID].doc.data.ops
-  ).convert()
+  const doc = clients[clientID].doc
+  doc.fetch((err) => {
+    if (err) throw err
 
-  res.send(html)
+    const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
+
+    res.send(html)
+  })
 }
 
 module.exports = {
