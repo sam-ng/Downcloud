@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv').config()
+const { errorHandler } = require('./middleware/errorMiddleware')
 const port = process.env.SERVER_PORT || 8000
 
 // Set up clients dictionary
@@ -30,7 +31,7 @@ app.get('/', (req, res) => {
 })
 
 // Error handler
-// app.use(errorHandler)
+app.use(errorHandler)
 
 app.listen(port, () => {
   console.log(`Server started on port: ${port}`)
