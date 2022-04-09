@@ -1,9 +1,12 @@
 const express = require('express')
+const session = require('express-session')
+const MongoDBSession = require('connect-mongodb-session')(session)
 const cors = require('cors')
 const dotenv = require('dotenv').config()
+const path = require('path')
 const { errorHandler } = require('./middleware/errorMiddleware')
-const port = process.env.SERVER_PORT || 8000
 const userController = require('./controllers/userController')
+const port = process.env.SERVER_PORT || 8000
 
 // Set up clients dictionary
 const clients = {}
@@ -11,6 +14,19 @@ module.exports = { clients }
 
 // Express app
 const app = express()
+
+// Sessions
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoDBSession({
+      uri: process.env.MONGO_URI,
+      collection: 'sessions',
+    }),
+  })
+)
 
 // CORS
 app.use(cors())
@@ -34,7 +50,9 @@ app.use('/connect', require('./routes/connectRoutes'))
 app.use('/op', require('./routes/opRoutes'))
 app.use('/doc', require('./routes/docRoutes'))
 app.get('/', (req, res) => {
-  res.sendStatus(200)
+  res.sendFile(path.join(__dirname, '/index.html'))
+  // if (req.session.auth) res.sendFile(path.join(__dirname, '/index.html'))
+  // else res.sendFile('not logged in')
 })
 
 // Error handler
