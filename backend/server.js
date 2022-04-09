@@ -4,7 +4,9 @@ const MongoDBSession = require('connect-mongodb-session')(session)
 const cors = require('cors')
 const dotenv = require('dotenv').config()
 const path = require('path')
+const connectDatabase = require('./config/db')
 const { errorHandler } = require('./middleware/errorMiddleware')
+const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
 const port = process.env.SERVER_PORT || 8000
 
@@ -12,6 +14,7 @@ const port = process.env.SERVER_PORT || 8000
 const clients = {}
 module.exports = { clients }
 
+connectDatabase()
 // Express app
 const app = express()
 
@@ -46,15 +49,20 @@ app.use(express.static('static'))
 app.use(express.static('node_modules/quill/dist')) // for quill css
 
 // Account Endpoints
-app.use('/adduser', userController.addUser)
+app.use('/adduser', userController.addUser) // SUBJECT TO CHANGE: Support creating new users
 app.use('/verify', require('./routes/verifyEmailRoutes'))
-app.use('/login', userController.loginUser)
+app.use('/login', userController.loginUser) // SUBJECT TO CHANGE: Existing users can log in to start a new cookie-based session
 app.use('/logout', userController.logoutUser)
 
 // Doc Routes
-app.use('/connect', require('./routes/connectRoutes'))
-app.use('/op', require('./routes/opRoutes'))
-app.use('/doc', require('./routes/docRoutes'))
+app.use('/connect', protect, require('./routes/connectRoutes'))
+app.use('/op', protect, require('./routes/opRoutes'))
+app.use('/doc', protect, require('./routes/docRoutes'))
+
+app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
+app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
+app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documentss
+
 app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })

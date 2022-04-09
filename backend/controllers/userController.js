@@ -6,10 +6,10 @@ const User = require('../models/userModel')
 // Transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  // auth: {
-  //   user: process.env.GMAIL_USER,
-  //   pass: process.env.GMAIL_PASS,
-  // },
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
 })
 
 const addUser = asyncHandler(async (req, res) => {
@@ -42,7 +42,7 @@ const addUser = asyncHandler(async (req, res) => {
 
   // Send verification email
   var message = {
-    //  from: process.env.GMAIL_USER,
+    from: process.env.GMAIL_USER,
     to: email,
     subject: 'Verify Your Email Address',
     text: `Your verification code is: ${verificationCode}. Click here to verify: http://downcloud.cse356.compas.cs.stonybrook.edu/verify?email=${email}&key=${verificationCode}`,
@@ -96,6 +96,9 @@ const loginUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
   req.session.destroy((err) => {
     if (err) throw err
+  })
+  res.clearCookie('connect.sid', {
+    path: '/',
   })
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 })

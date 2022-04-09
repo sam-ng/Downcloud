@@ -6,7 +6,7 @@
   "scripts": {
     "server": "nodemon backend/server.js",
     "sharedb-server": "nodemon backend/sharedb-server.js",
-    "build": "browserify static/scripts/index-auth.js -o static/bundle-auth.js",
+    "build": "browserify static/scripts/index.js -o static/bundle.js",
     "dev": "concurrently \"npm run build && npm run sharedb-server\" \"npm run server\""
   },
   "author": "",

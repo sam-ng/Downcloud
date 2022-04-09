@@ -1,8 +1,8 @@
 const express = require('express')
 const router = express.Router()
 
-const { getDoc } = require('../controllers/docController')
+const { getList } = require('../controllers/listController')
 
-router.get('/:id', getDoc)
+router.get('/', getList)
 
 module.exports = router
