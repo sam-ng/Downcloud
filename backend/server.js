@@ -3,9 +3,10 @@ const session = require('express-session')
 const MongoDBSession = require('connect-mongodb-session')(session)
 const cors = require('cors')
 const dotenv = require('dotenv').config()
+const path = require('path')
 const { errorHandler } = require('./middleware/errorMiddleware')
-const port = process.env.SERVER_PORT || 8000
 const userController = require('./controllers/userController')
+const port = process.env.SERVER_PORT || 8000
 
 // Set up clients dictionary
 const clients = {}
@@ -49,7 +50,7 @@ app.use('/connect', require('./routes/connectRoutes'))
 app.use('/op', require('./routes/opRoutes'))
 app.use('/doc', require('./routes/docRoutes'))
 app.get('/', (req, res) => {
-  res.sendStatus(200)
+  res.sendFile(path.join(__dirname, '/index.html'))
 })
 
 // Error handler
