@@ -1,4 +1,6 @@
 const express = require('express')
+const session = require('express-session')
+const MongoDBSession = require('connect-mongodb-session')(session)
 const cors = require('cors')
 const dotenv = require('dotenv').config()
 const { errorHandler } = require('./middleware/errorMiddleware')
@@ -11,6 +13,19 @@ module.exports = { clients }
 
 // Express app
 const app = express()
+
+// Sessions
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoDBSession({
+      uri: process.env.MONGO_URI,
+      collection: 'sessions',
+    }),
+  })
+)
 
 // CORS
 app.use(cors())
