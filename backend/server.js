@@ -15,6 +15,12 @@ module.exports = { clients }
 // Express app
 const app = express()
 
+app.set('view engine', 'ejs')
+
+/*/////////////
+ MIDDLEWARE
+/////////////*/
+
 // Sessions
 app.use(
   session({
@@ -49,10 +55,11 @@ app.use('/logout', userController.logoutUser)
 app.use('/connect', require('./routes/connectRoutes'))
 app.use('/op', require('./routes/opRoutes'))
 app.use('/doc', require('./routes/docRoutes'))
+app.get('/signup', (req, res) => {
+  res.render('pages/signup')
+})
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '/index.html'))
-  // if (req.session.auth) res.sendFile(path.join(__dirname, '/index.html'))
-  // else res.sendFile('not logged in')
+  res.render('pages/index', { auth: req.session.auth })
 })
 
 // Error handler
