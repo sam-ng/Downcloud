@@ -51,6 +51,8 @@ app.use('/op', require('./routes/opRoutes'))
 app.use('/doc', require('./routes/docRoutes'))
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '/index.html'))
+  // if (req.session.auth) res.sendFile(path.join(__dirname, '/index.html'))
+  // else res.sendFile('not logged in')
 })
 
 // Error handler
