@@ -122,6 +122,7 @@ const openConnection = async (req, res) => {
 
   // Client closed the connection
   req.on('close', () => {
+    presence.destroy()
     // console.log(`[connectController]: ${req.params.id} \n connection closed `)
     res.end()
     // delete clients[clientID]
