@@ -1,4 +1,12 @@
-const connection = require('../config/connection')
+// const connection = require('../config/connection')
+const sharedb = require('sharedb/lib/client')
+const richText = require('rich-text')
+const ReconnectingWebSocket = require('reconnecting-websocket')
+const WebSocket = require('ws')
+
+// Register rich text
+sharedb.types.register(richText.type)
+
 const { clients } = require('../server')
 const tinycolor = require('tinycolor2')
 
@@ -18,6 +26,16 @@ const openConnection = async (req, res) => {
 
   // Debug logging
   // console.log(`[connectController]: ${req.params.id} \n opening connection `)
+  // Open WebSocket connection to ShareDB server
+  const rws = new ReconnectingWebSocket(
+    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
+    [],
+    {
+      WebSocket: WebSocket,
+      // debug: false,
+    }
+  )
+  const connection = new sharedb.Connection(rws)
   const clientID = req.params.id
 
   // Get doc instance
@@ -25,22 +43,6 @@ const openConnection = async (req, res) => {
     process.env.CONNECTION_COLLECTION,
     req.params.docid
   )
-
-  // Get presence
-  const presence = doc.connection.getDocPresence(
-    process.env.CONNECTION_COLLECTION,
-    req.params.docid
-  )
-  presence.subscribe((err) => {
-    if (err) {
-      throw err
-    }
-  })
-  const localPresence = presence.create()
-
-  // Store client info
-  const clientObj = { clientID, res, connection, doc, presence, localPresence }
-  clients[clientID] = clientObj
 
   // Get inital doc data from server and listen for changes
   doc.subscribe((err) => {
@@ -67,14 +69,6 @@ const openConnection = async (req, res) => {
     res.set(headers)
     res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
-    presence.on('receive', (id, range) => {
-      console.log(range)
-      const colors = {}
-      colors[id] = colors[id] || tinycolor.random().toHexString()
-      const name = (range && range.name) || 'Anonymous'
-      const cursorData = { id, name, color: colors[id], range }
-      res.write(`data: ${JSON.stringify({ presence: cursorData })} \n\n`)
-    })
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
       // FIXME: remove
@@ -87,6 +81,44 @@ const openConnection = async (req, res) => {
       res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
+  // Get presence
+  const presence = doc.connection.getDocPresence(
+    process.env.CONNECTION_COLLECTION,
+    req.params.docid
+  )
+
+  presence.subscribe((err) => {
+    if (err) {
+      throw err
+    }
+  })
+  presence.on('receive', (id, range) => {
+    console.log(range)
+    const colors = {}
+    colors[id] = colors[id] || tinycolor.random().toHexString()
+    const name = (range && range.name) || 'Anonymous'
+    const cursorData = { id, name, color: colors[id], range }
+    res.write(`data: ${JSON.stringify({ presence: cursorData })} \n\n`)
+  })
+  presence.on('error', (err) => {
+    console.log(err)
+    if (err) {
+      throw err
+    }
+  })
+  const localPresence = presence.create()
+  // localPresence.submit({ index: 3, length: 3 })
+
+  // Store client info
+  const clientObj = {
+    clientID,
+    res,
+    connection,
+    doc,
+    presence,
+    localPresence,
+  }
+  clients[clientID] = clientObj
 
   // Client closed the connection
   req.on('close', () => {

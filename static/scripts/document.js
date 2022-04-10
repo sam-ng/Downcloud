@@ -36,6 +36,7 @@ const quill = new Quill('#editor', {
         image: imageHandler,
       },
     },
+    cursors: true,
   },
   // modules: {
   //   keyboard: {
