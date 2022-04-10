@@ -10,11 +10,11 @@ const updateDocument = async (req, res) => {
   }
 
   // Debug log
-  // console.log(
-  //   `[opController]: ${req.params.id} \n submit op: ${JSON.stringify(
-  //     req.body
-  //   )} `
-  // )
+  console.log(
+    `[opController]: ${req.params.id} \n submit op: ${JSON.stringify(
+      req.body
+    )} `
+  )
 
   const clientID = req.params.id
   req.body.forEach((oplist) => {
