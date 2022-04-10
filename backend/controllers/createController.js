@@ -1,9 +1,9 @@
 const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
-const { uuid } = require('uuidv4')
+const { v4: uuidv4 } = require('uuid')
 
 const createDoc = asyncHandler(async (req, res) => {
-  const doc = connection.get(process.env.CONNECTION_COLLECTION, uuid())
+  const doc = connection.get(process.env.CONNECTION_COLLECTION, uuidv4())
   doc.fetch((err) => {
     if (err) {
       throw err
