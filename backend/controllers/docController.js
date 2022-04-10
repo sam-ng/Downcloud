@@ -2,7 +2,7 @@ const QuillDeltaToHtmlConverter =
   require('quill-delta-to-html').QuillDeltaToHtmlConverter
 const { clients } = require('../server')
 
-const getDocument = async (req, res) => {
+const getDoc = async (req, res) => {
   if (!req.params) {
     throw new Error('No connection id specified.')
   }
@@ -29,5 +29,5 @@ const getDocument = async (req, res) => {
 }
 
 module.exports = {
-  getDocument,
+  getDoc,
 }

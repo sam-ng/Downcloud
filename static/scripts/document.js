@@ -5,6 +5,7 @@ const axios = require('axios')
 const SERVER_URL = `http://localhost:8000`
 const ID = uuidv4()
 
+console.log(window.location.search)
 // Set up event stream to listen to events from server
 const evtSource = new EventSource(`/connect/${ID}`)
 
