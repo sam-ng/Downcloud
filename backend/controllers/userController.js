@@ -89,6 +89,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Creates new session
   req.session.auth = true
+  req.session.username = username
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 })

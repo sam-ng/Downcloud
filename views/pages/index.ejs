@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Milestone 1</title>
-    <!-- <link href="/static/css/index/styles.css" rel="stylesheet" /> -->
+    <link href="css/index/styles.css" rel="stylesheet" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
       rel="stylesheet"
@@ -25,7 +25,7 @@
         class="create-btn btn-floating btn-large waves-effect waves-light blue right"
         ><i class="material-icons">add</i></a
       >
-      <ul class="collection">
+      <ul id="doc-list" class="collection">
         <% docList.forEach((doc) => { %>
         <a class="collection-item">Document <% doc.id %></a>
         <%}) %>
