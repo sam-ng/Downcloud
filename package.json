@@ -6,7 +6,7 @@
   "scripts": {
     "server": "nodemon backend/server.js",
     "sharedb-server": "nodemon backend/sharedb-server.js",
-    "build": "browserify static/scripts/index.js -o static/bundle.js",
+    "build": "browserify static/scripts/document.js -o static/bundle.js",
     "dev": "concurrently \"npm run build && npm run sharedb-server\" \"npm run server\""
   },
   "author": "",
@@ -31,6 +31,7 @@
     "sharedb": "^2.2.5",
     "sharedb-mongo": "^1.0.0",
     "uuid": "^8.3.2",
+    "uuidv4": "^6.2.13",
     "ws": "^8.5.0"
   },
   "devDependencies": {

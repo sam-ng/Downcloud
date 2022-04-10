@@ -5,9 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Milestone 1</title>
+    <link href="/static/css/index/styles.css" rel="stylesheet" />
     <link
-      rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
     />
     <!-- <% if (auth) { %>
     <link href="quill.snow.css" rel="stylesheet" />
@@ -15,12 +20,20 @@
   </head>
 
   <body>
-    <% if (auth) { %>
-    <!-- list of documents page, create button -->
-    <!-- <div id="editor"></div>
-    <script src="bundle.js"></script> -->
-    <% } else { %>
     <div class="container">
+      <% if (auth) { %>
+      <h1>Documents</h1>
+      <a
+        class="create-btn btn-floating btn-large waves-effect waves-light blue right"
+        ><i class="material-icons">add</i></a
+      >
+      <ul class="collection">
+        <% docList.forEach((doc) => { %>
+        <a class="collection-item">Document <% doc.id %></a>
+        <%}) %>
+      </ul>
+      <% } else { %>
+
       <div class="card">
         <div class="card-content">
           <span class="card-title">Log in</span>
@@ -42,8 +55,9 @@
           </div>
         </div>
       </div>
+
+      <% } %>
     </div>
-    <% } %>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   </body>
 </html>
