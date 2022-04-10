@@ -12,7 +12,7 @@ const headers = {
 
 const openConnection = async (req, res) => {
   if (!req.params) {
-    throw new Error('No connection id specified.')
+    throw new Error('No connection ID or document ID specified.')
   }
 
   // Debug logging
@@ -21,7 +21,7 @@ const openConnection = async (req, res) => {
   // Get doc instance
   const doc = connection.get(
     process.env.CONNECTION_COLLECTION,
-    process.env.CONNECTION_ID
+    req.params.docid
   )
 
   // Store client info

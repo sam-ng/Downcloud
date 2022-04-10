@@ -11,7 +11,7 @@ const renderHome = asyncHandler(async (req, res) => {
       const docs = query.results
       res.render('pages/index', {
         auth: req.session.auth,
-        docList: docs.map((doc) => doc.id),
+        docIDList: docs.map((doc) => doc.id),
       })
     })
   } else {

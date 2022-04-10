@@ -16512,9 +16512,11 @@ const axios = require('axios')
 const SERVER_URL = `http://localhost:8000`
 const ID = uuidv4()
 
-console.log(window.location.search)
+const path = window.location.pathname
+const docID = path.split('/').slice(-1)[0]
+
 // Set up event stream to listen to events from server
-const evtSource = new EventSource(`/connect/${ID}`)
+const evtSource = new EventSource(`/connect/${ID}/${docID}`)
 
 // Set up quill
 const quill = new Quill('#editor', { theme: 'snow' })

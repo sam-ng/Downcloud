@@ -3,6 +3,6 @@ const router = express.Router()
 
 const { openConnection } = require('../controllers/connectController')
 
-router.get('/:id', openConnection)
+router.get('/:id/:docid', openConnection)
 
 module.exports = router
