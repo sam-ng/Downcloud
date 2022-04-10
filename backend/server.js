@@ -6,7 +6,7 @@ const dotenv = require('dotenv').config()
 const path = require('path')
 const connection = require('./config/connection')
 const connectDatabase = require('./config/db')
-const logger = require('./config/logger')
+const { logger } = require('./config/logger')
 const { errorHandler } = require('./middleware/errorMiddleware')
 const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
@@ -17,12 +17,10 @@ const port = process.env.SERVER_PORT || 8000
 const clients = {}
 module.exports = { clients }
 
-// Connect
 connectDatabase()
-
-// Express app
 const app = express()
 
+// TODO: switch to React.js
 app.set('view engine', 'ejs')
 
 /*/////////////
@@ -63,32 +61,35 @@ app.use('/verify', require('./routes/verifyEmailRoutes'))
 app.use('/login', userController.loginUser) // SUBJECT TO CHANGE: Existing users can log in to start a new cookie-based session
 app.use('/logout', userController.logoutUser)
 
-// Doc Routes
+// Document Create/Edit/Access Endpoints
+app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
 app.use('/connect', protect, require('./routes/connectRoutes'))
 app.use('/op', protect, require('./routes/opRoutes'))
 app.use('/presence', protect, require('./routes/presenceRoutes'))
+app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
+app.use('/upload', protect, require('./routes/imageRoutes')) // SUBJECT TO CHANGE: Logged in users can upload image files;;;
+
+// Document Info Endpoints
+app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
 app.use('/doc', protect, require('./routes/docRoutes'))
 
-app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
-app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
-app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
-
+// Frontend Auth
 app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })
 
-// Images
-app.use('/upload', protect, require('./routes/imageRoutes')) // SUBJECT TO CHANGE: Logged in users can upload image files;;;
+// Frontend Images
+app.use('/images', express.static('images'))
 app.get('/upload-image', (req, res) => {
   res.render('pages/upload')
 })
-app.use('/images', express.static('images'))
 
+// Frontend Home
 app.get('/', listController.renderHome)
 
 // Error handler
 app.use(errorHandler)
 
 app.listen(port, () => {
-  console.log(`Server started on port: ${port}`)
+  logger.info(`Server started on port: ${port}`)
 })
