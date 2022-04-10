@@ -7,7 +7,7 @@ const storage = multer.diskStorage({
     cb(null, './images')
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname)
+    cb(null, Date.now() + path.extname(file.originalname))
   },
 })
 
@@ -30,10 +30,12 @@ const uploadWrapper = asyncHandler(async (req, res, next) => {
 })
 
 const uploadImage = asyncHandler(async (req, res) => {
-  console.log(req.file)
+  const fileName = req.file.filename.split('.')[0]
+  const fileExtension = req.file.filename.split('.')[1]
+  const imagePath = `/images/${fileName}.${fileExtension}`
 
   res.json({
-    message: 'Successfully uploaded image.',
+    imagePath,
   })
 })
 
