@@ -5,7 +5,7 @@ const errorHandler = (err, req, res, next) => {
     status: 'ERROR',
     // FIXME: comment out message and stack before submission
     message: err.message,
-    // stack: err.stack,
+    stack: err.stack,
   })
 }
 
