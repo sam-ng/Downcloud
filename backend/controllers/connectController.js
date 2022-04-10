@@ -1,4 +1,4 @@
-// const connection = require('../config/connection')
+const { logger } = require('../config/logger')
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
@@ -24,8 +24,8 @@ const openConnection = async (req, res) => {
     throw new Error('No connection ID or document ID or presenceID specified.')
   }
 
-  // Debug logging
-  // console.log(`[connectController]: ${req.params.id} \n opening connection `)
+  // logger.info(`[connectController]: ${req.params.id}; opening connection stream `)
+
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
     `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
@@ -50,64 +50,56 @@ const openConnection = async (req, res) => {
       throw err
     }
 
-    // Debug logging
-    // console.log(`[connectController]: ${req.params.id} \n subscribe `)
-
-    // // FIXME: remove
-    // console.log(
+    // logger.info(`[connectController]: client: ${req.params.id}; subscribe to doc: ${req.params.docid} `)
+    // logger.info(
     //   `[connectController]: ${req.params.id} \n doc.data: ${JSON.stringify(
     //     doc.data
     //   )} `
     // )
-    // console.log(
+    // logger.info(
     //   `[connectController]: ${req.params.id} \n doc.data.ops: ${JSON.stringify(
     //     doc.data.ops
     //   )} `
     // )
 
     // Create event stream and initial doc data
-    res.set(headers)
-    res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
+    res
+      .set(headers)
+      .write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
-      // FIXME: remove
-      if (clientID === source) return
-      // console.log(
+      if (clientID === source) {
+        return
+      }
+
+      // logger.info(
       //   `[connectController]: ${req.params.id} \n op: ${JSON.stringify([op])} `
       // )
-      // console.log(`[connectController]: ${req.params.id} \n source: ${source} `)
+      // logger.info(`[connectController]: ${req.params.id} \n source: ${source} `)
 
       res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
+
   // Get presence
   const presence = doc.connection.getDocPresence(
     process.env.CONNECTION_COLLECTION,
     req.params.docid
   )
-
   presence.subscribe((err) => {
     if (err) {
       throw err
     }
   })
   presence.on('receive', (id, range) => {
-    console.log(range)
     const colors = {}
     colors[id] = colors[id] || tinycolor.random().toHexString()
     const name = (range && range.name) || 'Anonymous'
     const cursorData = { id, name, color: colors[id], range }
     res.write(`data: ${JSON.stringify({ presence: cursorData })} \n\n`)
   })
-  presence.on('error', (err) => {
-    console.log(err)
-    if (err) {
-      throw err
-    }
-  })
   const localPresence = presence.create()
-  // localPresence.submit({ index: 3, length: 3 })
 
   // Store client info
   const clientObj = {
@@ -122,7 +114,8 @@ const openConnection = async (req, res) => {
 
   // Client closed the connection
   req.on('close', () => {
-    // console.log(`[connectController]: ${req.params.id} \n connection closed `)
+    // logger.info(`[connectController]: ${req.params.id} \n connection closed `)
+    presence.destroy()
     res.end()
     // delete clients[clientID]
   })

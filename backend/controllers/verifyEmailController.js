@@ -24,7 +24,6 @@ const getVerify = asyncHandler(async (req, res) => {
   }
 
   // Verified code
-  // await user.updateOne({ email, $set: { verified: true } })
   await User.updateOne({ email }, { verified: true })
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 })

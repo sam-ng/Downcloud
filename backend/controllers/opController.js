@@ -1,3 +1,4 @@
+const { logger } = require('../config/logger')
 const { clients } = require('../server')
 
 const updateDocument = async (req, res) => {
@@ -9,11 +10,8 @@ const updateDocument = async (req, res) => {
     throw new Error('No connection id specified.')
   }
 
-  // Debug log
-  // console.log(
-  //   `[opController]: ${req.params.id} \n submit op: ${JSON.stringify(
-  //     req.body
-  //   )} `
+  // logger.info(
+  //   `[opController]: ${req.params.id}; submit op: ${JSON.stringify(req.body)} `
   // )
 
   const clientID = req.params.id
@@ -21,7 +19,7 @@ const updateDocument = async (req, res) => {
     clients[clientID].doc.submitOp(oplist, { source: clientID })
   })
 
-  res.sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 }
 
 module.exports = {

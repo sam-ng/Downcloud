@@ -2,6 +2,7 @@ const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
+const { logger } = require('./logger')
 
 // Register rich text
 sharedb.types.register(richText.type)
@@ -15,5 +16,7 @@ const rws = new ReconnectingWebSocket(
   }
 )
 const connection = new sharedb.Connection(rws)
+
+logger.info('Created global connection from server to sharedb-server')
 
 module.exports = connection
