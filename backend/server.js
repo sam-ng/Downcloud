@@ -63,6 +63,7 @@ app.use('/logout', userController.logoutUser)
 // Doc Routes
 app.use('/connect', protect, require('./routes/connectRoutes'))
 app.use('/op', protect, require('./routes/opRoutes'))
+app.use('/presence', protect, require('./routes/presenceRoutes'))
 app.use('/doc', protect, require('./routes/docRoutes'))
 
 app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents

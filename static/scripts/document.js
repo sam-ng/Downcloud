@@ -1,8 +1,10 @@
 const Quill = require('quill')
+const QuillCursors = require('quill-cursors')
 const { v4: uuidv4 } = require('uuid')
 const axios = require('axios')
 
-const SERVER_URL = `http://localhost:8000`
+Quill.register('modules/cursors', QuillCursors)
+
 const ID = uuidv4()
 
 const path = window.location.pathname
@@ -26,11 +28,29 @@ quill.on('text-change', (delta, oldDelta, source) => {
   axios.post(`/op/${ID}`, [delta.ops])
 })
 
+// Send cursor changes we made on quill
+quill.on('selection-change', (range, oldRange, source) => {
+  // Don't send changes to shareDB if we didn't make the change
+  if (source !== 'user') {
+    return
+  }
+
+  // If range is null, indicates focus lost => appears to everyone else that cursor is where it was before
+  if (!range) return
+
+  axios.post(`/presence/${ID}`, range)
+})
+
 // Update quill when message is received from server event stream
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
   // console.log(data)
-  if (data.content) {
+  if (data.presence) {
+    const cursors = quill.getModule('cursors')
+    const { id, name, color, range } = data.presence
+    cursors.createCursor(id, name, color)
+    cursors.moveCursor(id, range)
+  } else if (data.content) {
     // Set initial doc contents
     quill.setContents(data.content)
   } else {

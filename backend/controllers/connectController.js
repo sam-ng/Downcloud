@@ -1,5 +1,6 @@
 const connection = require('../config/connection')
 const { clients } = require('../server')
+const tinycolor = require('tinycolor2')
 
 // HTTP event stream headers
 const headers = {
@@ -12,11 +13,12 @@ const headers = {
 
 const openConnection = async (req, res) => {
   if (!req.params) {
-    throw new Error('No connection ID or document ID specified.')
+    throw new Error('No connection ID or document ID or presenceID specified.')
   }
 
   // Debug logging
   // console.log(`[connectController]: ${req.params.id} \n opening connection `)
+  const clientID = req.params.id
 
   // Get doc instance
   const doc = connection.get(
@@ -24,9 +26,20 @@ const openConnection = async (req, res) => {
     req.params.docid
   )
 
+  // Get presence
+  const presence = doc.connection.getDocPresence(
+    process.env.CONNECTION_COLLECTION,
+    req.params.docid
+  )
+  presence.subscribe((err) => {
+    if (err) {
+      throw err
+    }
+  })
+  const localPresence = presence.create()
+
   // Store client info
-  const clientID = req.params.id
-  const clientObj = { clientID, res, connection, doc }
+  const clientObj = { clientID, res, connection, doc, presence, localPresence }
   clients[clientID] = clientObj
 
   // Get inital doc data from server and listen for changes
@@ -54,6 +67,14 @@ const openConnection = async (req, res) => {
     res.set(headers)
     res.write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
+    presence.on('receive', (id, range) => {
+      console.log(range)
+      const colors = {}
+      colors[id] = colors[id] || tinycolor.random().toHexString()
+      const name = (range && range.name) || 'Anonymous'
+      const cursorData = { id, name, color: colors[id], range }
+      res.write(`data: ${JSON.stringify({ presence: cursorData })} \n\n`)
+    })
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
       // FIXME: remove
