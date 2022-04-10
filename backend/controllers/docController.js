@@ -1,6 +1,7 @@
 const QuillDeltaToHtmlConverter =
   require('quill-delta-to-html').QuillDeltaToHtmlConverter
 const { clients } = require('../server')
+const { logger } = require('../config/logger')
 
 const getDoc = async (req, res) => {
   if (!req.params) {
@@ -8,8 +9,8 @@ const getDoc = async (req, res) => {
   }
 
   const clientID = req.params.id
-  // FIXME: remove
-  // console.log(
+
+  // logger.info(
   //   `[docController]: ${
   //     req.params.id
   //   } \n clients[clientID].doc.data.ops: ${JSON.stringify(
@@ -23,8 +24,7 @@ const getDoc = async (req, res) => {
 
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
 
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
-    res.send(html)
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
   })
 }
 

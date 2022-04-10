@@ -19,7 +19,7 @@ const updateDocument = async (req, res) => {
     clients[clientID].doc.submitOp(oplist, { source: clientID })
   })
 
-  res.sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 }
 
 module.exports = {

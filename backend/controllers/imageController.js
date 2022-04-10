@@ -34,7 +34,7 @@ const uploadImage = asyncHandler(async (req, res) => {
   const fileExtension = req.file.filename.split('.')[1]
   const imagePath = `/images/${fileName}.${fileExtension}`
 
-  res.json({
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({
     imagePath,
   })
 })
