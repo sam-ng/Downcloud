@@ -3,6 +3,7 @@ const connection = require('../config/connection')
 
 const renderHome = asyncHandler(async (req, res) => {
   if (req.session.auth) {
+    // Render list of documents
     const query = connection.createFetchQuery(
       process.env.CONNECTION_COLLECTION,
       {}
@@ -15,10 +16,12 @@ const renderHome = asyncHandler(async (req, res) => {
       })
     })
   } else {
+    // Render login/signup page
     res.render('pages/index', { auth: req.session.auth })
   }
 })
 
+// Get list of existing documents
 const getList = asyncHandler(async (req, res) => {
   const query = connection.createFetchQuery(
     process.env.CONNECTION_COLLECTION,
