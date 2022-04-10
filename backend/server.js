@@ -73,6 +73,14 @@ app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUB
 app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })
+
+// Images
+app.use('/upload', protect, require('./routes/imageRoutes')) // SUBJECT TO CHANGE: Logged in users can upload image files;;;
+app.get('/upload-image', (req, res) => {
+  res.render('pages/upload')
+})
+app.use('/images', express.static('images'))
+
 app.get('/', listController.renderHome)
 
 // Error handler
