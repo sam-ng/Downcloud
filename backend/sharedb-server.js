@@ -9,7 +9,7 @@ const port = process.env.SHAREDB_PORT || 8001
 
 ShareDB.types.register(richText.type)
 const db = require('sharedb-mongo')(process.env.MONGO_URI)
-const backend = new ShareDB({ db })
+const backend = new ShareDB({ db, presence: true })
 // const connection = backend.connect()
 // const doc = connection.get(
 //   process.env.CONNECTION_COLLECTION,
