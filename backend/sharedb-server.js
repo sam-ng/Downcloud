@@ -10,11 +10,6 @@ const port = process.env.SHAREDB_PORT || 8001
 ShareDB.types.register(richText.type)
 const db = require('sharedb-mongo')(process.env.MONGO_URI)
 const backend = new ShareDB({ db, presence: true })
-// const connection = backend.connect()
-// const doc = connection.get(
-//   process.env.CONNECTION_COLLECTION,
-//   process.env.CONNECTION_ID
-// )
 
 // Start server
 const app = express()
@@ -26,19 +21,5 @@ wss.on('connection', (ws) => {
   let stream = new WebSocketJSONStream(ws)
   backend.listen(stream)
 })
-
 server.listen(port)
 // console.log(`Sharedb-server started on port: ${port}`)
-
-// // Get doc data
-// doc.fetch((err) => {
-//   if (err) {
-//     throw err
-//   }
-
-//   // Create a new doc if it doesn't exist
-//   // if (doc.type === null) {
-//   //   doc.create([], 'rich-text')
-//   // }
-
-// })

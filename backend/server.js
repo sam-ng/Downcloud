@@ -6,17 +6,20 @@ const dotenv = require('dotenv').config()
 const path = require('path')
 const connection = require('./config/connection')
 const connectDatabase = require('./config/db')
+const logger = require('./config/logger')
 const { errorHandler } = require('./middleware/errorMiddleware')
 const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
 const listController = require('./controllers/listController')
 const port = process.env.SERVER_PORT || 8000
 
-// Set up clients dictionary
+// Dictionary of client tabs
 const clients = {}
 module.exports = { clients }
 
+// Connect
 connectDatabase()
+
 // Express app
 const app = express()
 
