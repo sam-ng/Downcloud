@@ -16521,7 +16521,7 @@ const path = window.location.pathname
 const docID = path.split('/').slice(-1)[0]
 
 // Set up event stream to listen to events from server
-const evtSource = new EventSource(`/connect/${ID}/${docID}`)
+const evtSource = new EventSource(`/connect/${docID}/${ID}`)
 
 // Image
 // const imgBlot = new QuillImage(Quill, { handler: imageHandler })

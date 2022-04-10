@@ -1,3 +1,4 @@
+const { logger } = require('../config/logger')
 const { clients } = require('../server')
 
 const updatePresence = async (req, res) => {
@@ -12,13 +13,20 @@ const updatePresence = async (req, res) => {
   const clientID = req.params.id
   const range = req.body
   range.name = req.session.username
-  console.log('submitting ' + JSON.stringify(range))
-  console.log(clients[clientID].localPresence.presence)
+
+  // logger.info(
+  //   `user: ${
+  //     req.session.username
+  //   }, clientID/tab: ${clientID}, range: ${JSON.stringify(range)} `
+  // )
+
   clients[clientID].localPresence.submit(range, (err) => {
-    if (err) throw err
+    if (err) {
+      throw err
+    }
   })
 
-  res.sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 }
 
 module.exports = {
