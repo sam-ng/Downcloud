@@ -1,3 +1,4 @@
+const { logger } = require('../config/logger')
 const asyncHandler = require('express-async-handler')
 const nodemailer = require('nodemailer')
 const { v4: uuidv4 } = require('uuid')
@@ -41,7 +42,7 @@ const addUser = asyncHandler(async (req, res) => {
   })
 
   // Send verification email
-  var message = {
+  const message = {
     from: process.env.GMAIL_USER,
     to: email,
     subject: 'Verify Your Email Address',
@@ -52,7 +53,7 @@ const addUser = asyncHandler(async (req, res) => {
       res.status(400)
       throw new Error('Unable to send verification code')
     } else {
-      console.log('Email sent: ' + info.response)
+      logger.info('Email sent: ' + info.response)
     }
   })
 
