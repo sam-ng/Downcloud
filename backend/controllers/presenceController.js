@@ -12,9 +12,9 @@ const updatePresence = async (req, res) => {
   const clientID = req.params.id
   const range = req.body
   range.name = req.session.username
-  console.log('submitting :' + Object.keys(clients))
+  console.log('submitting ' + JSON.stringify(range))
+  console.log(clients[clientID].localPresence.presence)
   clients[clientID].localPresence.submit(range, (err) => {
-    console.log('error: ' + err)
     if (err) throw err
   })
 
