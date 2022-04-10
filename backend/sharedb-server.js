@@ -6,6 +6,7 @@ const richText = require('rich-text')
 const WebSocket = require('ws')
 const WebSocketJSONStream = require('@teamwork/websocket-json-stream')
 const port = process.env.SHAREDB_PORT || 8001
+const { logger } = require('./config/logger')
 
 ShareDB.types.register(richText.type)
 const db = require('sharedb-mongo')(process.env.MONGO_URI)
@@ -22,4 +23,4 @@ wss.on('connection', (ws) => {
   backend.listen(stream)
 })
 server.listen(port)
-// console.log(`Sharedb-server started on port: ${port}`)
+logger.info(`Sharedb-server started on port: ${port}`)
