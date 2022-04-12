@@ -10,12 +10,16 @@ const { logger } = require('./config/logger')
 const { errorHandler } = require('./middleware/errorMiddleware')
 const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
-const listController = require('./controllers/listController')
+// const listController = require('./controllers/listController')
 const port = process.env.SERVER_PORT || 8000
 
 // Dictionary of client tabs
 const clients = {}
-module.exports = { clients }
+
+// Dictionary mapping docids to names
+const docIDNamePairs = {}
+
+module.exports = { clients, docIDNamePairs }
 
 connectDatabase()
 const app = express()
@@ -83,7 +87,7 @@ app.get('/signup', (req, res) => {
 app.use('/media', protect, require('./routes/mediaRoutes'))
 
 // Frontend Home
-app.get('/', listController.renderHome)
+// app.get('/', listController.renderHome)
 
 // Error handler
 app.use(errorHandler)

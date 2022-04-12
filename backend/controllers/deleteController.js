@@ -1,12 +1,15 @@
 const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
+const { docIDNamePairs } = require('../server')
 const { logger } = require('../config/logger')
 
 const deleteDoc = asyncHandler(async (req, res) => {
   if (!req.body) {
     logger.error('[deleteController]: doc ID was not specified')
   }
-  const doc = connection.get(process.env.CONNECTION_COLLECTION, req.body.docid)
+
+  const docID = req.body.docid
+  const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
   doc.fetch((err) => {
     if (err) {
       throw err
@@ -15,6 +18,7 @@ const deleteDoc = asyncHandler(async (req, res) => {
     if (doc.type !== null) {
       doc.del()
       doc.destroy()
+      delete docIDNamePairs[docID]
     } else {
       // FIXME:
       logger.error('[deleteController]: doc ID does not exist')

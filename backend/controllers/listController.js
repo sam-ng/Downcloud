@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
+const { docIDNamePairs } = require('../server')
 
 const renderHome = asyncHandler(async (req, res) => {
   if (req.session.auth) {
@@ -12,7 +13,7 @@ const renderHome = asyncHandler(async (req, res) => {
       const docs = query.results
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/index', {
         auth: req.session.auth,
-        docNames: docs.map((doc) => doc.name),
+        docNames: docs.map((doc) => docIDNamePairs[doc.id]),
       })
     })
   } else {
@@ -33,7 +34,7 @@ const getList = asyncHandler(async (req, res) => {
     const docs = query.results
     res
       .set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
-      .send(docs.map((doc) => ({ id: doc.id, name: doc.name })))
+      .json(docs.map((doc) => ({ id: doc.id, name: docIDNamePairs[doc.id] })))
   })
 })
 

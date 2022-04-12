@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
+const { docIDNamePairs } = require('../server')
 const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
 
@@ -15,7 +16,8 @@ const createDoc = asyncHandler(async (req, res) => {
     }
 
     if (doc.type === null) {
-      doc.create([{ name: req.body.name }], 'rich-text')
+      doc.create([], 'rich-text')
+      docIDNamePairs[docID] = req.body.name
       res
         .set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
         .status(200)
