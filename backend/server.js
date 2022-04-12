@@ -56,10 +56,7 @@ app.use(express.static('node_modules/quill/dist')) // for quill css
 /////////////*/
 
 // Account Endpoints
-app.use('/adduser', userController.addUser) // SUBJECT TO CHANGE: Support creating new users
-app.use('/verify', require('./routes/verifyEmailRoutes'))
-app.use('/login', userController.loginUser) // SUBJECT TO CHANGE: Existing users can log in to start a new cookie-based session
-app.use('/logout', userController.logoutUser)
+app.use('/users', require('./routes/userRoutes'))
 
 // Document Create/Edit/Access Endpoints
 app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
