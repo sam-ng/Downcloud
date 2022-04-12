@@ -1,9 +1,11 @@
 const express = require('express')
 const router = express.Router()
 
-const { createDoc } = require('../controllers/createController')
-const { deleteDoc } = require('../controllers/deleteController')
-const { getList } = require('../controllers/listController')
+const {
+  createDoc,
+  deleteDoc,
+  getList,
+} = require('../controllers/collectionController')
 
 router.post('/create', createDoc)
 router.post('/delete', deleteDoc)
