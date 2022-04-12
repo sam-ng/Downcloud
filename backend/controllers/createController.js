@@ -4,6 +4,9 @@ const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
 
 const createDoc = asyncHandler(async (req, res) => {
+  if (!req.body) {
+    logger.error('[createController]: name was not specified')
+  }
   const doc = connection.get(process.env.CONNECTION_COLLECTION, uuidv4())
   doc.fetch((err) => {
     if (err) {
@@ -11,7 +14,7 @@ const createDoc = asyncHandler(async (req, res) => {
     }
 
     if (doc.type === null) {
-      doc.create([], 'rich-text')
+      doc.create([{ name: req.body.name }], 'rich-text')
     } else {
       // FIXME:
       logger.error(
