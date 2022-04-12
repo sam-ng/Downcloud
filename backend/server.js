@@ -61,6 +61,9 @@ app.use('/verify', require('./routes/verifyEmailRoutes'))
 app.use('/login', userController.loginUser) // SUBJECT TO CHANGE: Existing users can log in to start a new cookie-based session
 app.use('/logout', userController.logoutUser)
 
+// Collection Endpoints
+app.use('/collection', protect, require('./routes/collectionRoutes'))
+
 // Document Create/Edit/Access Endpoints
 app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
 app.use('/connect', protect, require('./routes/connectRoutes'))

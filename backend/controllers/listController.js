@@ -12,7 +12,7 @@ const renderHome = asyncHandler(async (req, res) => {
       const docs = query.results
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/index', {
         auth: req.session.auth,
-        docIDList: docs.map((doc) => doc.id),
+        docNames: docs.map((doc) => doc.name),
       })
     })
   } else {
@@ -33,7 +33,7 @@ const getList = asyncHandler(async (req, res) => {
     const docs = query.results
     res
       .set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
-      .send(docs.map((doc) => ({ id: doc.id, data: doc.data })))
+      .send(docs.map((doc) => ({ id: doc.id, name: doc.name })))
   })
 })
 
