@@ -9,24 +9,24 @@ const transporter = nodemailer.createTransport({
   host: 'localhost',
   port: 25,
   secure: false,
-  tls: { rejectUnauthorized: false }
+  tls: { rejectUnauthorized: false },
 })
 
 const addUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body
+  const { name, email, password } = req.body
 
   // Check all fields exist
-  if (!username || !password || !email) {
+  if (!name || !password || !email) {
     res.status(400)
     throw new Error('Please enter all fields')
   }
 
   // Check email is unique
   const emailExist = await User.findOne({ email })
-  const usernameExist = await User.findOne({ username })
-  if (emailExist || usernameExist) {
+  const nameExist = await User.findOne({ name })
+  if (emailExist || nameExist) {
     res.status(400)
-    throw new Error('Username or email already exists')
+    throw new Error('Name or email already exists')
   }
 
   // Create verification code
@@ -34,7 +34,7 @@ const addUser = asyncHandler(async (req, res) => {
 
   // Create user
   const user = await User.create({
-    username,
+    name,
     password,
     email,
     verificationCode,
@@ -45,7 +45,7 @@ const addUser = asyncHandler(async (req, res) => {
     from: process.env.MAIL_SENDER,
     to: email,
     subject: 'Verify Your Email Address',
-    text: `Your verification code is: ${verificationCode}. Click here to verify: http://downcloud.cse356.compas.cs.stonybrook.edu/verify?email=${email}&key=${verificationCode}`,
+    text: `Your verification code is: ${verificationCode}. Click here to verify: http://downcloud.cse356.compas.cs.stonybrook.edu/users/verify?email=${email}&key=${verificationCode}`,
   }
   transporter.sendMail(message, (err, info) => {
     if (err) {
@@ -60,16 +60,16 @@ const addUser = asyncHandler(async (req, res) => {
 })
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { username, password } = req.body
+  const { email, password } = req.body
 
   // Check all fields exist
-  if (!username || !password) {
+  if (!email || !password) {
     res.status(400)
     throw new Error('Please enter all fields')
   }
 
   // Check if user exists
-  const user = await User.findOne({ username })
+  const user = await User.findOne({ email })
   if (!user) {
     res.status(400)
     throw new Error('Login error')
@@ -89,7 +89,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Creates new session
   req.session.auth = true
-  req.session.username = username
+  req.session.name = user.name
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 })
@@ -104,8 +104,36 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 })
 
+const verifyUser = asyncHandler(async (req, res) => {
+  const { email, key } = req.query
+
+  // Check all fields exist
+  if (!email || !key) {
+    res.status(400)
+    throw new Error('Missing verification information')
+  }
+
+  // Check user exists with email
+  const user = await User.findOne({ email })
+  if (!user) {
+    res.status(400)
+    throw new Error('Unable to verify')
+  }
+
+  // Invalid code
+  if (key != user.verificationCode /*&& key != process.env.BACKDOOR_KEY*/) {
+    res.status(400)
+    throw new Error('Unable to verify')
+  }
+
+  // Verified code
+  await User.updateOne({ email }, { verified: true })
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
+})
+
 module.exports = {
   addUser,
   loginUser,
   logoutUser,
+  verifyUser,
 }
