@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
-const { docIDNamePairs } = require('../server')
+const DocumentMap = require('../models/documentMapModel')
 const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
 
@@ -10,14 +10,14 @@ const createDoc = asyncHandler(async (req, res) => {
   }
   const docID = uuidv4()
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
-  doc.fetch((err) => {
+  doc.fetch(async (err) => {
     if (err) {
       throw err
     }
 
     if (doc.type === null) {
       doc.create([], 'rich-text')
-      docIDNamePairs[docID] = req.body.name
+      await DocumentMap.create({ docID, name: req.body.name })
       res
         .set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
         .status(200)

@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
-const { docIDNamePairs } = require('../server')
+const DocumentMap = require('../models/documentMapModel')
 const { logger } = require('../config/logger')
 
 const deleteDoc = asyncHandler(async (req, res) => {
@@ -18,7 +18,7 @@ const deleteDoc = asyncHandler(async (req, res) => {
     if (doc.type !== null) {
       doc.del()
       doc.destroy()
-      delete docIDNamePairs[docID]
+      DocumentMap.deleteOne({ docID })
     } else {
       // FIXME:
       logger.error('[deleteController]: doc ID does not exist')

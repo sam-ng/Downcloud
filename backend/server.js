@@ -10,7 +10,7 @@ const { logger } = require('./config/logger')
 const { errorHandler } = require('./middleware/errorMiddleware')
 const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
-// const listController = require('./controllers/listController')
+const listController = require('./controllers/listController')
 const port = process.env.SERVER_PORT || 8000
 
 // Dictionary of client tabs
