@@ -12,6 +12,7 @@ const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
 const listController = require('./controllers/listController')
 const port = process.env.SERVER_PORT || 8000
+const getRawBody = require('raw-body')
 
 // Dictionary of client tabs
 const clients = {}
@@ -40,6 +41,25 @@ app.use(
   })
 )
 
+// Body size limit middleware
+// app.use((req, res, next) => {
+//   getRawBody(
+//     req,
+//     {
+//       // length: req.headers['content-length'],
+//       limit: '10mb',
+//       // encoding: contentType.parse(req).parameters.charset,
+//     },
+//     (err, string) => {
+//       if (err) {
+//         next(err.message)
+//       }
+//       logger.info('Set up ')
+//       next()
+//     }
+//   )
+// })
+
 // CORS
 app.use(cors())
 
@@ -64,7 +84,6 @@ app.use('/connect', protect, require('./routes/connectRoutes'))
 app.use('/op', protect, require('./routes/opRoutes'))
 app.use('/presence', protect, require('./routes/presenceRoutes'))
 app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
-app.use('/upload', protect, require('./routes/imageRoutes')) // SUBJECT TO CHANGE: Logged in users can upload image files;;;
 
 // Document Info Endpoints
 app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
@@ -75,11 +94,8 @@ app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })
 
-// Frontend Images
-app.use('/images', express.static('images'))
-app.get('/upload-image', (req, res) => {
-  res.render('pages/upload')
-})
+// Media Endpoints
+app.use('/media', protect, require('./routes/mediaRoutes'))
 
 // Frontend Home
 app.get('/', listController.renderHome)
