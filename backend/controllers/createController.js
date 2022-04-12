@@ -7,7 +7,8 @@ const createDoc = asyncHandler(async (req, res) => {
   if (!req.body) {
     logger.error('[createController]: name was not specified')
   }
-  const doc = connection.get(process.env.CONNECTION_COLLECTION, uuidv4())
+  const docID = uuidv4()
+  const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
   doc.fetch((err) => {
     if (err) {
       throw err
@@ -15,14 +16,17 @@ const createDoc = asyncHandler(async (req, res) => {
 
     if (doc.type === null) {
       doc.create([{ name: req.body.name }], 'rich-text')
+      res
+        .set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
+        .status(200)
+        .json({ docid: docID })
     } else {
       // FIXME:
       logger.error(
         '[createController]: doc id already exists (should not happen)'
       )
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
     }
-
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
   })
 })
 

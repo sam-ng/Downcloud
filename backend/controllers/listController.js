@@ -6,7 +6,7 @@ const renderHome = asyncHandler(async (req, res) => {
     // Render list of documents
     const query = connection.createFetchQuery(
       process.env.CONNECTION_COLLECTION,
-      {}
+      { $sort: { '_m.mtime': -1 }, $limit: 10 } // sort documents by modified time in descending order and limit to 10
     )
     query.on('ready', () => {
       const docs = query.results
