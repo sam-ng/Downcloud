@@ -6,11 +6,10 @@ const User = require('../models/userModel')
 
 // Transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
+  host: 'localhost',
+  port: 25,
+  secure: false,
+  tls: { rejectUnauthorized: false }
 })
 
 const addUser = asyncHandler(async (req, res) => {
@@ -43,7 +42,7 @@ const addUser = asyncHandler(async (req, res) => {
 
   // Send verification email
   const message = {
-    from: process.env.GMAIL_USER,
+    from: process.env.MAIL_SENDER,
     to: email,
     subject: 'Verify Your Email Address',
     text: `Your verification code is: ${verificationCode}. Click here to verify: http://downcloud.cse356.compas.cs.stonybrook.edu/verify?email=${email}&key=${verificationCode}`,
@@ -51,7 +50,8 @@ const addUser = asyncHandler(async (req, res) => {
   transporter.sendMail(message, (err, info) => {
     if (err) {
       res.status(400)
-      throw new Error('Unable to send verification code')
+      logger.error(err.message)
+      // throw new Error('Unable to send verification code')
     } else {
       logger.info('Email sent: ' + info.response)
     }
