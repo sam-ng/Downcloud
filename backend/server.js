@@ -61,8 +61,8 @@ app.use('/users', require('./routes/userRoutes'))
 // Document Create/Edit/Access Endpoints
 app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
 // app.use('/connect', protect, require('./routes/connectRoutes'))
-app.use('/op', protect, require('./routes/opRoutes'))
-app.use('/presence', protect, require('./routes/presenceRoutes'))
+// app.use('/op', protect, require('./routes/opRoutes'))
+// app.use('/presence', protect, require('./routes/presenceRoutes'))
 
 // Document Info Endpoints
 app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents

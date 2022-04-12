@@ -22,6 +22,7 @@ const headers = {
 }
 
 const getDocUI = asyncHandler(async (req, res) => {
+  // logger.info(`[docController]: getting doc ui`)
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
 })
 
@@ -30,7 +31,10 @@ const openConnection = async (req, res) => {
     throw new Error('No connection ID or document ID or presenceID specified.')
   }
 
-  // logger.info(`[connectController]: ${req.params.uid}; opening connection stream `)
+  const { docid, uid } = req.params
+
+  logger.info(`[docController]: opening connection stream`)
+  logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
 
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
@@ -139,13 +143,49 @@ const updateDocument = async (req, res) => {
   const { docid, uid } = req.params
   const { version, op } = req.body
 
-  // logger.info(
-  //   `[opController]: ${req.params.uid}; submit op: ${JSON.stringify(req.body)} `
-  // )
+  logger.info(`[docController]: updating document`)
+  logger.info(
+    `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${op}} `
+  )
 
   const clientID = req.params.uid
-  req.body.forEach((oplist) => {
+  op.forEach((oplist) => {
     clients[clientID].doc.submitOp(oplist, { source: clientID })
+  })
+
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
+}
+
+const updatePresence = async (req, res) => {
+  if (!req.body) {
+    throw new Error('Missing body.')
+  }
+
+  if (!req.params) {
+    throw new Error('No connection id specified.')
+  }
+
+  const { docid, uid } = req.params
+  const { index, length } = req.body
+
+  const clientID = req.params.uid
+  const range = req.body
+  range.name = req.session.name
+
+  logger.info(`[docController]: updating presence`)
+  logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
+  logger.info(`[docController]: index: ${index}; length: ${length}`)
+
+  // logger.info(
+  //   `user: ${
+  //     req.session.name
+  //   }, clientID/tab: ${clientID}, range: ${JSON.stringify(range)} `
+  // )
+
+  clients[clientID].localPresence.submit(range, (err) => {
+    if (err) {
+      throw err
+    }
   })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
@@ -179,5 +219,6 @@ const updateDocument = async (req, res) => {
 module.exports = {
   getDocUI,
   openConnection,
-  // updateDocument,
+  updateDocument,
+  updatePresence,
 }
