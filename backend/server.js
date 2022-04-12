@@ -56,10 +56,7 @@ app.use(express.static('node_modules/quill/dist')) // for quill css
 /////////////*/
 
 // Account Endpoints
-app.use('/adduser', userController.addUser) // SUBJECT TO CHANGE: Support creating new users
-app.use('/verify', require('./routes/verifyEmailRoutes'))
-app.use('/login', userController.loginUser) // SUBJECT TO CHANGE: Existing users can log in to start a new cookie-based session
-app.use('/logout', userController.logoutUser)
+app.use('/users', require('./routes/userRoutes'))
 
 // Collection Endpoints
 app.use('/collection', protect, require('./routes/collectionRoutes'))
@@ -69,11 +66,12 @@ app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHAN
 app.use('/connect', protect, require('./routes/connectRoutes'))
 app.use('/op', protect, require('./routes/opRoutes'))
 app.use('/presence', protect, require('./routes/presenceRoutes'))
-app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
-app.use('/upload', protect, require('./routes/imageRoutes')) // SUBJECT TO CHANGE: Logged in users can upload image files;;;
 
 // Document Info Endpoints
 app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
+
+// Doc endpoints
+app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
 app.use('/doc', protect, require('./routes/docRoutes'))
 
 // Frontend Auth
@@ -81,11 +79,8 @@ app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })
 
-// Frontend Images
-app.use('/images', express.static('images'))
-app.get('/upload-image', (req, res) => {
-  res.render('pages/upload')
-})
+// Media Endpoints
+app.use('/media', protect, require('./routes/mediaRoutes'))
 
 // Frontend Home
 app.get('/', listController.renderHome)
