@@ -26,9 +26,9 @@
         ><i class="material-icons">add</i></a
       >
       <ul id="doc-id-list" class="collection">
-        <% docIDList.forEach((docID) => { %>
-        <a href="document/<%= docID %>" class="collection-item"
-          >Document <%= docID %></a
+        <% docNames.forEach((name) => { %>
+        <a href="document/<%= name %>" class="collection-item"
+          >Document <%= name %></a
         >
         <%}) %>
       </ul>
