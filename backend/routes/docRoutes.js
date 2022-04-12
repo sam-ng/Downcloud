@@ -1,8 +1,14 @@
 const express = require('express')
 const router = express.Router()
 
-const { getDoc } = require('../controllers/docController')
+const {
+  getDocUI,
+  openConnection,
+  updateDocument,
+} = require('../controllers/docController')
 
-router.get('/:id', getDoc)
+router.get('/edit/:docid', getDocUI)
+router.get('/connect/:docid/:uid', openConnection)
+router.post('/:docid/:uid', updateDocument)
 
 module.exports = router
