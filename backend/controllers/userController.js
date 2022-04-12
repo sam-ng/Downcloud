@@ -50,8 +50,7 @@ const addUser = asyncHandler(async (req, res) => {
   transporter.sendMail(message, (err, info) => {
     if (err) {
       res.status(400)
-      logger.error(err.message)
-      // throw new Error('Unable to send verification code')
+      throw new Error(`Unable to send verification code: ${err.message}`)
     } else {
       logger.info('Email sent: ' + info.response)
     }
