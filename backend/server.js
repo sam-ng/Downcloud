@@ -12,7 +12,6 @@ const { protect } = require('./middleware/authMiddleware')
 const userController = require('./controllers/userController')
 const listController = require('./controllers/listController')
 const port = process.env.SERVER_PORT || 8000
-const getRawBody = require('raw-body')
 
 // Dictionary of client tabs
 const clients = {}
@@ -40,25 +39,6 @@ app.use(
     }),
   })
 )
-
-// Body size limit middleware
-// app.use((req, res, next) => {
-//   getRawBody(
-//     req,
-//     {
-//       // length: req.headers['content-length'],
-//       limit: '10mb',
-//       // encoding: contentType.parse(req).parameters.charset,
-//     },
-//     (err, string) => {
-//       if (err) {
-//         next(err.message)
-//       }
-//       logger.info('Set up ')
-//       next()
-//     }
-//   )
-// })
 
 // CORS
 app.use(cors())
