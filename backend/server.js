@@ -63,10 +63,12 @@ app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHAN
 app.use('/connect', protect, require('./routes/connectRoutes'))
 app.use('/op', protect, require('./routes/opRoutes'))
 app.use('/presence', protect, require('./routes/presenceRoutes'))
-app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
 
 // Document Info Endpoints
 app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
+
+// Doc endpoints
+app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
 app.use('/doc', protect, require('./routes/docRoutes'))
 
 // Frontend Auth
