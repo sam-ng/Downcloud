@@ -11,10 +11,7 @@ const path = window.location.pathname
 const docID = path.split('/').slice(-1)[0]
 
 // Set up event stream to listen to events from server
-const evtSource = new EventSource(`/connect/${docID}/${ID}`)
-
-// Image
-// const imgBlot = new QuillImage(Quill, { handler: imageHandler })
+const evtSource = new EventSource(`/doc/connect/${docID}/${ID}`)
 
 // Toolbar options
 const toolbar = [
@@ -38,13 +35,6 @@ const quill = new Quill('#editor', {
     },
     cursors: true,
   },
-  // modules: {
-  //   keyboard: {
-  //     bindings: {
-  //       ...QuillImageBindings,
-  //     },
-  //   },
-  // },
 })
 
 // Image handler
@@ -56,38 +46,6 @@ function imageHandler() {
   }
 }
 
-// /**
-//  * Do something to our dropped or pasted image
-//  * @param.quill - the quill instance
-//  * @param.guid - a unique guid for this image, if required
-//  * @param.imageDataUrl - image's base64 url
-//  * @param.type - image's mime type
-//  */
-// // Image handler
-// async function handler(quill, guid, dataUrl, type) {
-//   // give a default mime type if the type was null
-//   if (!type) type = 'image/png'
-
-//   // Convert base64 to blob
-//   const blob = await fetch(b64Image).then((res) => res.blob())
-
-//   // Generate a filename
-//   const filename = `${guid}.${type.match(/^image\/(\w+)$/i)[1]}`
-
-//   // Generate a form data
-//   const formData = new FormData()
-//   formData.append('filename', filename)
-//   formData.append('file', blob)
-
-//   // Upload your file here – promise should resolve with the public URL
-//   return new Promise((resolve) => {
-//     setTimeout(
-//       () => resolve('https://media2.giphy.com/media/RQgzLsPYlzrBC/source.gif'),
-//       3000
-//     )
-//   })
-// }
-
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
   // Don't send changes to shareDB if we didn't make the change
@@ -97,7 +55,7 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log('Delta ' + JSON.stringify(delta))
   // console.log('Delta ' + JSON.stringify(delta.ops))
 
-  axios.post(`/op/${ID}`, [delta.ops])
+  axios.post(`/doc/op/${docID}/${ID}`, { version: -1, op: delta.ops })
 })
 
 // Send cursor changes we made on quill
@@ -110,7 +68,7 @@ quill.on('selection-change', (range, oldRange, source) => {
   // If range is null, indicates focus lost => appears to everyone else that cursor is where it was before
   if (!range) return
 
-  axios.post(`/presence/${ID}`, range)
+  axios.post(`/doc/presence/${docID}/${ID}`, range)
 })
 
 // Update quill when message is received from server event stream
