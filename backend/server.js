@@ -9,8 +9,9 @@ const connectDatabase = require('./config/db')
 const { logger } = require('./config/logger')
 const { errorHandler } = require('./middleware/errorMiddleware')
 const { protect } = require('./middleware/authMiddleware')
-const userController = require('./controllers/userController')
-const listController = require('./controllers/listController')
+// const userController = require('./controllers/userController')
+// const listController = require('./controllers/listController')
+const { renderHome } = require('./controllers/collectionController')
 const port = process.env.SERVER_PORT || 8000
 
 // Dictionary of client tabs
@@ -66,13 +67,13 @@ app.use('/users', require('./routes/userRoutes'))
 app.use('/collection', protect, require('./routes/collectionRoutes'))
 
 // Document Create/Edit/Access Endpoints
-app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
+// app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
 // app.use('/connect', protect, require('./routes/connectRoutes'))
 // app.use('/op', protect, require('./routes/opRoutes'))
 // app.use('/presence', protect, require('./routes/presenceRoutes'))
 
 // Document Info Endpoints
-app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
+// app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
 
 // Doc endpoints
 app.use('/doc', protect, require('./routes/docRoutes'))
@@ -87,7 +88,7 @@ app.get('/signup', (req, res) => {
 app.use('/media', protect, require('./routes/mediaRoutes'))
 
 // Frontend Home
-// app.get('/', listController.renderHome)
+app.get('/home', renderHome)
 
 // Error handler
 app.use(errorHandler)

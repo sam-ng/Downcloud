@@ -27,7 +27,7 @@
       >
       <ul id="doc-id-list" class="collection">
         <% docIDNameList.forEach((docIDName) => { %>
-        <a href="document/<%= docIDName.docID %>" class="collection-item"
+        <a href="/doc/edit/<%= docIDName.docID %>" class="collection-item"
           >Document <%= docIDName.name %></a
         >
         <%}) %>

@@ -73,22 +73,32 @@ const openConnection = async (req, res) => {
     // )
 
     // Create event stream and initial doc data
-    res
-      .set(headers)
-      .write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
+    res.set(headers).write(
+      `data: ${JSON.stringify({
+        content: doc.data.ops,
+        version: doc.version,
+      })} \n\n`
+    )
+    // .write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
+      logger.info(`[docController]: op: ${JSON.stringify(op)}`)
       if (clientID === source) {
-        return
+        res.write(
+          `data: ${JSON.stringify({
+            ack: op,
+          })} \n\n`
+        )
+      } else {
+        // FIXME: [op] -> op
+        // res.write(`data: ${JSON.stringify([op])}\n\n`)
+        res.write(
+          `data: ${JSON.stringify({
+            op,
+          })} \n\n`
+        )
       }
-
-      // logger.info(
-      //   `[connectController]: ${req.params.uid} \n op: ${JSON.stringify([op])} `
-      // )
-      // logger.info(`[connectController]: ${req.params.uid} \n source: ${source} `)
-
-      res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
 
@@ -106,8 +116,8 @@ const openConnection = async (req, res) => {
     const colors = {}
     colors[id] = colors[id] || tinycolor.random().toHexString()
     const name = (range && range.name) || 'Anonymous'
-    const cursorData = { id, name, color: colors[id], range }
-    res.write(`data: ${JSON.stringify({ presence: cursorData })} \n\n`)
+    // const cursorData = { id, name, color: colors[id], range }
+    res.write(`data: ${JSON.stringify({ id, cursor: range })} \n\n`)
   })
   const localPresence = presence.create()
 
@@ -131,7 +141,7 @@ const openConnection = async (req, res) => {
   })
 }
 
-const updateDocument = async (req, res) => {
+const updateDocument = asyncHandler(async (req, res) => {
   if (!req.body) {
     throw new Error('Missing body.')
   }
@@ -142,19 +152,22 @@ const updateDocument = async (req, res) => {
 
   const { docid, uid } = req.params
   const { version, op } = req.body
+  const clientID = uid
 
   logger.info(`[docController]: updating document`)
   logger.info(
-    `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${op}} `
+    `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${JSON.stringify(
+      op
+    )}} `
   )
 
-  const clientID = req.params.uid
-  op.forEach((oplist) => {
-    clients[clientID].doc.submitOp(oplist, { source: clientID })
-  })
-
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
-}
+  if (version === clients[clientID].doc.version) {
+    clients[clientID].doc.submitOp(op, { source: clientID })
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+  } else {
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+  }
+})
 
 const updatePresence = async (req, res) => {
   if (!req.body) {
@@ -191,34 +204,29 @@ const updatePresence = async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 }
 
-// const getDoc = async (req, res) => {
-//   if (!req.params) {
-//     throw new Error('No connection id specified.')
-//   }
+const getDoc = async (req, res) => {
+  if (!req.params) {
+    throw new Error('No connection id specified.')
+  }
 
-//   const clientID = req.params.uid
+  const { docid, uid } = req.params
+  const clientID = uid
 
-//   // logger.info(
-//   //   `[docController]: ${
-//   //     req.params.uid
-//   //   } \n clients[clientID].doc.data.ops: ${JSON.stringify(
-//   //     clients[clientID].doc.data.ops
-//   //   )} `
-//   // )
+  const doc = clients[clientID].doc
+  doc.fetch((err) => {
+    if (err) {
+      throw err
+    }
 
-//   const doc = clients[clientID].doc
-//   doc.fetch((err) => {
-//     if (err) throw err
-
-//     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
-
-//     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
-//   })
-// }
+    const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
+  })
+}
 
 module.exports = {
   getDocUI,
   openConnection,
   updateDocument,
   updatePresence,
+  getDoc,
 }

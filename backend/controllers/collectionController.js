@@ -98,7 +98,10 @@ const renderHome = asyncHandler(async (req, res) => {
       const documentMaps = await fetchDocumentMaps(docs)
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/index', {
         auth: req.session.auth,
-        docNames: docs.map((doc) => documentMaps[doc.id]),
+        docIDNameList: docs.map((doc) => ({
+          docID: doc.id,
+          name: documentMaps[doc.id],
+        })),
       })
     })
   } else {
