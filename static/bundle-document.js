@@ -16638,14 +16638,15 @@ quill.on('selection-change', (range, oldRange, source) => {
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
   // console.log('data from evtSource: ', data)
-  if (data.cursor) {
+  if (data.presence) {
     const cursors = quill.getModule('cursors')
-    const { id, cursor } = data
-    cursors.createCursor(id, cursor.name, '#000')
-    cursors.moveCursor(id, cursor)
-  } else if ('cursor' in data && data.cursor === null) {
-    // null cursor
-    // console.log('null cursor: ', data)
+    const { id, cursor } = data.presence
+    if (cursor) {
+      cursors.createCursor(id, cursor.name, '#000')
+      cursors.moveCursor(id, cursor)
+    } else {
+      cursors.removeCursor(id)
+    }
   } else if (data.ack) {
     // Acknowledged our change
     // console.log('acked: ', data)

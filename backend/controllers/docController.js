@@ -118,7 +118,12 @@ const openConnection = async (req, res) => {
     colors[id] = colors[id] || tinycolor.random().toHexString()
     const name = (range && range.name) || 'Anonymous'
     // const cursorData = { id, name, color: colors[id], range }
-    res.write(`data: ${JSON.stringify({ id, cursor: range })} \n\n`)
+
+    console.log(id)
+    console.log(range)
+    res.write(
+      `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
+    )
   })
   const localPresence = presence.create()
 
@@ -196,16 +201,11 @@ const updatePresence = async (req, res) => {
     throw new Error('No connection id specified.')
   }
 
-  const { docid, uid } = req.params
-  const { index, length } = req.body
-
   const clientID = req.params.uid
-  const range = req.body
+  const range = req.body // req.body is {index, length}
   range.name = req.session.name
 
   // logger.info(`[docController]: updating presence`)
-  // logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
-  // logger.info(`[docController]: index: ${index}; length: ${length}`)
 
   // logger.info(
   //   `user: ${
