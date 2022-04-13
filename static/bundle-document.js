@@ -16519,6 +16519,7 @@ const ID = uuidv4()
 
 const path = window.location.pathname
 const docID = path.split('/').slice(-1)[0]
+let version = -1
 
 // Set up event stream to listen to events from server
 const evtSource = new EventSource(`/doc/connect/${docID}/${ID}`)
@@ -16565,7 +16566,14 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log('Delta ' + JSON.stringify(delta))
   // console.log('Delta ' + JSON.stringify(delta.ops))
 
-  axios.post(`/doc/op/${docID}/${ID}`, { version: -1, op: delta.ops })
+  // disable text-change in quill
+  // get version number
+  // await until axios post to op bas been submitted
+  // enable editor
+
+  // queue of text-changes
+
+  axios.post(`/doc/op/${docID}/${ID}`, { version, op: delta.ops })
 })
 
 // Send cursor changes we made on quill
@@ -16585,17 +16593,23 @@ quill.on('selection-change', (range, oldRange, source) => {
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
   // console.log(data)
-  if (data.presence) {
+  if (data.cursor) {
     const cursors = quill.getModule('cursors')
-    const { id, name, color, range } = data.presence
-    cursors.createCursor(id, name, color)
-    cursors.moveCursor(id, range)
+    const { id, cursor } = data
+    cursors.createCursor(id, cursor.name, '#000')
+    cursors.moveCursor(id, cursor)
+  } else if (data.ack) {
+    // Acknowledged our change
+    version += 1
   } else if (data.content) {
-    // Set initial doc contents
+    // Get inital document
     quill.setContents(data.content)
+    version = data.version
   } else {
-    // Update doc contents
-    data.forEach((oplist) => quill.updateContents(oplist))
+    // Update doc contents from other clients
+    // data.forEach((oplist) => quill.updateContents(oplist))
+    quill.updateContents(data)
+    version += 1
   }
 }
 

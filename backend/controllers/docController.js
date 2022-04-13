@@ -73,23 +73,32 @@ const openConnection = async (req, res) => {
     // )
 
     // Create event stream and initial doc data
-    res
-      .set(headers)
-      .write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
+    res.set(headers).write(
+      `data: ${JSON.stringify({
+        content: doc.data.ops,
+        version: doc.version,
+      })} \n\n`
+    )
+    // .write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
+      logger.info(`[docController]: op: ${JSON.stringify(op)}`)
       if (clientID === source) {
-        res.write({ ack: op })
+        res.write(
+          `data: ${JSON.stringify({
+            ack: op,
+          })} \n\n`
+        )
+      } else {
+        // FIXME: [op] -> op
+        // res.write(`data: ${JSON.stringify([op])}\n\n`)
+        res.write(
+          `data: ${JSON.stringify({
+            op,
+          })} \n\n`
+        )
       }
-
-      // logger.info(
-      //   `[connectController]: ${req.params.uid} \n op: ${JSON.stringify([op])} `
-      // )
-      // logger.info(`[connectController]: ${req.params.uid} \n source: ${source} `)
-
-      // FIXME: [op] -> op
-      res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
 
@@ -107,8 +116,8 @@ const openConnection = async (req, res) => {
     const colors = {}
     colors[id] = colors[id] || tinycolor.random().toHexString()
     const name = (range && range.name) || 'Anonymous'
-    const cursorData = { id, name, color: colors[id], range }
-    res.write(`data: ${JSON.stringify({ presence: cursorData })} \n\n`)
+    // const cursorData = { id, name, color: colors[id], range }
+    res.write(`data: ${JSON.stringify({ id, cursor: range })} \n\n`)
   })
   const localPresence = presence.create()
 
@@ -147,10 +156,12 @@ const updateDocument = asyncHandler(async (req, res) => {
 
   logger.info(`[docController]: updating document`)
   logger.info(
-    `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${op}} `
+    `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${JSON.stringify(
+      op
+    )}} `
   )
 
-  if (version === client[clientID].doc.version) {
+  if (version === clients[clientID].doc.version) {
     clients[clientID].doc.submitOp(op, { source: clientID })
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
   } else {
