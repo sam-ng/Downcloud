@@ -161,12 +161,22 @@ const updateDocument = asyncHandler(async (req, res) => {
     )}} `
   )
 
-  if (version === clients[clientID].doc.version) {
-    clients[clientID].doc.submitOp(op, { source: clientID })
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-  } else {
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
-  }
+  const doc = clients[clientID].doc
+  doc.fetch((err) => {
+    if (err) {
+      throw err
+    }
+    console.log(version)
+    console.log(doc.version)
+
+    if (version === doc.version) {
+      console.log('submit')
+      clients[clientID].doc.submitOp(op, { source: clientID })
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+    } else {
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+    }
+  })
 })
 
 const updatePresence = async (req, res) => {

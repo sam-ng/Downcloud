@@ -73,9 +73,9 @@ const openConnection = async (req, res) => {
         return
       }
 
-      // logger.info(
-      //   `[connectController]: ${req.params.id} \n op: ${JSON.stringify([op])} `
-      // )
+      logger.info(
+        `[connectController]: ${req.params.id} \n op: ${JSON.stringify([op])} `
+      )
       // logger.info(`[connectController]: ${req.params.id} \n source: ${source} `)
 
       res.write(`data: ${JSON.stringify([op])}\n\n`)
