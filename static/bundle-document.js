@@ -16569,17 +16569,35 @@ function imageHandler() {
 // }
 
 // Helper to send op request
-const sendOpQueue = () => {
+const sendOpQueue = async () => {
+  console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
     console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
-    axios.post(`/doc/op/${docID}/${ID}`, { version, op: opQueue[0] })
-
     waitingForAck = true
+
+    // Submit op and wait for response
+    let response = await axios.post(`/doc/op/${docID}/${ID}`, {
+      version,
+      op: opQueue[0],
+    })
+
+    console.log(`response.data.status: ${response.data.status}`)
+
+    // Retry if server tells us to retry
+    while (response.data.status == 'retry') {
+      response = await axios.post(`/doc/op/${docID}/${ID}`, {
+        version,
+        op: opQueue[0],
+      })
+    }
   }
+  console.log('exit sending opqueue')
 }
 
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
+  console.log('opqueue: ', opQueue)
+
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
     return

@@ -59,17 +59,35 @@ function imageHandler() {
 // }
 
 // Helper to send op request
-const sendOpQueue = () => {
+const sendOpQueue = async () => {
+  // console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
-    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
-    axios.post(`/doc/op/${docID}/${ID}`, { version, op: opQueue[0] })
-
+    // console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
     waitingForAck = true
+
+    // Submit op and wait for response
+    let response = await axios.post(`/doc/op/${docID}/${ID}`, {
+      version,
+      op: opQueue[0],
+    })
+
+    // console.log(`response.data.status: ${response.data.status}`)
+
+    // Retry if server tells us to retry
+    while (response.data.status == 'retry') {
+      response = await axios.post(`/doc/op/${docID}/${ID}`, {
+        version,
+        op: opQueue[0],
+      })
+    }
   }
+  // console.log('exit sending opqueue')
 }
 
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
+  // console.log('opqueue: ', opQueue)
+
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
     return
@@ -117,10 +135,10 @@ evtSource.onmessage = (event) => {
     cursors.moveCursor(id, cursor)
   } else if ('cursor' in data && data.cursor === null) {
     // null cursor
-    console.log('null cursor: ', data)
+    // console.log('null cursor: ', data)
   } else if (data.ack) {
     // Acknowledged our change
-    console.log('acked: ', data)
+    // console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
@@ -128,13 +146,13 @@ evtSource.onmessage = (event) => {
     sendOpQueue()
   } else if (data.content) {
     // Get inital document
-    console.log('initial doc: ', data)
+    // console.log('initial doc: ', data)
     quill.setContents(data.content)
     version = data.version
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    console.log('update doc from other clients: ', data)
+    // console.log('update doc from other clients: ', data)
     // FIXME: change back from data.op -> data
     // quill.updateContents(data)
     quill.updateContents(data.op)

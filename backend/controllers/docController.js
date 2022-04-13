@@ -84,6 +84,7 @@ const openConnection = async (req, res) => {
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
       logger.info(`[docController]: op: ${JSON.stringify(op)}`)
+      logger.info(`doc.version before if statment: ${doc.version}`)
       if (clientID === source) {
         logger.info(`ack op`)
         res.write(
@@ -164,7 +165,21 @@ const updateDocument = asyncHandler(async (req, res) => {
 
   if (version === doc.version) {
     logger.info('version = doc.version, submitting op')
-    clients[clientID].doc.submitOp(op, { source: clientID })
+    clients[clientID].doc.submitOp(op, { source: clientID }, (err) => {
+      if (err) {
+        throw err
+      }
+
+      // once op is committed, this is called
+      // The version will only be incremented for local ops sent through submitOp() after the server has acknowledged the op, when the submitOp callback has been called.
+      // do we need await somewhere? idk
+      // wait let me see something
+      // hmm, we might need await if it's the sender
+      // let's see
+      logger.info(
+        `op has been commited to the server and version has been incremented. doc.version: ${doc.version} `
+      )
+    })
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
   } else {
     logger.info('version != doc.version, no update')
