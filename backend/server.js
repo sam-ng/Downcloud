@@ -56,39 +56,17 @@ app.use(express.urlencoded({ extended: false }))
 app.use(express.static('static'))
 app.use(express.static('node_modules/quill/dist')) // for quill css
 
-/*/////////////
- ENDPOINTS
-/////////////*/
-
-// Account Endpoints
+// Endpoints
 app.use('/users', require('./routes/userRoutes'))
-
-// Collection Endpoints
 app.use('/collection', protect, require('./routes/collectionRoutes'))
-
-// Document Create/Edit/Access Endpoints
-// app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
-// app.use('/connect', protect, require('./routes/connectRoutes'))
-// app.use('/op', protect, require('./routes/opRoutes'))
-// app.use('/presence', protect, require('./routes/presenceRoutes'))
-
-// Document Info Endpoints
-// app.use('/list', protect, require('./routes/listRoutes')) // SUBJECT TO CHANGE: Logged in users can see a list of existing documents
-
-// Doc endpoints
 app.use('/doc', protect, require('./routes/docRoutes'))
-// app.use('/document', protect, require('./routes/documentRoutes')) // HEAVILY SUBJECT TO CHANGE: Logged in users can connect new editing sessions to existing documents
+app.use('/media', protect, require('./routes/mediaRoutes'))
 
-// Frontend Auth
+// Frontend Home + Sign up
+app.get('/home', renderHome)
 app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })
-
-// Media Endpoints
-app.use('/media', protect, require('./routes/mediaRoutes'))
-
-// Frontend Home
-app.get('/home', renderHome)
 
 // Error handler
 app.use(errorHandler)

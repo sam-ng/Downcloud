@@ -16571,9 +16571,8 @@ function imageHandler() {
 // Helper to send op request
 const sendOpQueue = () => {
   if (!waitingForAck && opQueue.length > 0) {
-    const { op } = opQueue.shift()
-    console.log('submitting: ', JSON.stringify({ version, op }))
-    axios.post(`/doc/op/${docID}/${ID}`, { version, op })
+    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
+    axios.post(`/doc/op/${docID}/${ID}`, { version, op: opQueue[0] })
 
     waitingForAck = true
   }
@@ -16590,7 +16589,7 @@ quill.on('text-change', (delta, oldDelta, source) => {
 
   // Store op in queue
 
-  opQueue.push({ op: delta.ops })
+  opQueue.push(delta.ops)
 
   sendOpQueue()
 
@@ -16634,6 +16633,8 @@ evtSource.onmessage = (event) => {
     console.log('acked: ', data)
     version += 1
     waitingForAck = false
+    opQueue.shift() // remove from queue after we have acknowledged
+
     sendOpQueue()
   } else if (data.content) {
     // Get inital document

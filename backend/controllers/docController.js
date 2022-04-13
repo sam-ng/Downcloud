@@ -83,28 +83,22 @@ const openConnection = async (req, res) => {
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
-      doc.fetch((err) => {
-        if (err) {
-          throw err
-        }
-
-        logger.info(`[docController]: op: ${JSON.stringify(op)}`)
-        if (clientID === source) {
-          logger.info(`ack op`)
-          res.write(
-            `data: ${JSON.stringify({
-              ack: op,
-              tempversion: doc.version,
-            })} \n\n`
-          )
-        } else {
-          logger.info(`update op from other client`)
-          // res.write(`data: ${JSON.stringify(op)} \n\n`)
-          res.write(
-            `data: ${JSON.stringify({ op, tempversion: doc.version })} \n\n`
-          )
-        }
-      })
+      logger.info(`[docController]: op: ${JSON.stringify(op)}`)
+      if (clientID === source) {
+        logger.info(`ack op`)
+        res.write(
+          `data: ${JSON.stringify({
+            ack: op,
+            tempversion: doc.version,
+          })} \n\n`
+        )
+      } else {
+        logger.info(`update op from other client`)
+        // res.write(`data: ${JSON.stringify(op)} \n\n`)
+        res.write(
+          `data: ${JSON.stringify({ op, tempversion: doc.version })} \n\n`
+        )
+      }
     })
   })
 
@@ -169,9 +163,11 @@ const updateDocument = asyncHandler(async (req, res) => {
   logger.info(`version: ${version}; doc.version: ${doc.version}`)
 
   if (version === doc.version) {
+    logger.info('version = doc.version, submitting op')
     clients[clientID].doc.submitOp(op, { source: clientID })
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
   } else {
+    logger.info('version != doc.version, no update')
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
 })
