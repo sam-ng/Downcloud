@@ -119,8 +119,8 @@ const openConnection = async (req, res) => {
     const name = (range && range.name) || 'Anonymous'
     // const cursorData = { id, name, color: colors[id], range }
 
-    console.log(id)
-    console.log(range)
+    // console.log(id)
+    // console.log(range)
     res.write(
       `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
     )

@@ -6,7 +6,7 @@ const errorHandler = (err, req, res, next) => {
   logger.error(err.stack)
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').status(200).json({
-    status: 'ERROR',
+    error: true,
     // FIXME: comment out message and stack before submission
     message: err.message,
     // stack: err.stack,
