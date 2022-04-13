@@ -16570,9 +16570,9 @@ function imageHandler() {
 
 // Helper to send op request
 const sendOpQueue = async () => {
-  console.log('attempting to send opqueue')
+  // console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
-    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
+    // console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
     waitingForAck = true
 
     // Submit op and wait for response
@@ -16581,7 +16581,7 @@ const sendOpQueue = async () => {
       op: opQueue[0],
     })
 
-    console.log(`response.data.status: ${response.data.status}`)
+    // console.log(`response.data.status: ${response.data.status}`)
 
     // Retry if server tells us to retry
     while (response.data.status == 'retry') {
@@ -16591,12 +16591,12 @@ const sendOpQueue = async () => {
       })
     }
   }
-  console.log('exit sending opqueue')
+  // console.log('exit sending opqueue')
 }
 
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
-  console.log('opqueue: ', opQueue)
+  // console.log('opqueue: ', opQueue)
 
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
@@ -16645,7 +16645,7 @@ evtSource.onmessage = (event) => {
     cursors.moveCursor(id, cursor)
   } else if ('cursor' in data && data.cursor === null) {
     // null cursor
-    console.log('null cursor: ', data)
+    // console.log('null cursor: ', data)
   } else if (data.ack) {
     // Acknowledged our change
     console.log('acked: ', data)
@@ -16656,7 +16656,7 @@ evtSource.onmessage = (event) => {
     sendOpQueue()
   } else if (data.content) {
     // Get inital document
-    console.log('initial doc: ', data)
+    // console.log('initial doc: ', data)
     quill.setContents(data.content)
     version = data.version
   } else {
