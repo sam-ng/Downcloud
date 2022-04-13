@@ -16565,7 +16565,7 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log('Delta ' + JSON.stringify(delta))
   // console.log('Delta ' + JSON.stringify(delta.ops))
 
-  axios.post(`/doc/op/${docID}/${ID}`, [delta.ops])
+  axios.post(`/doc/op/${docID}/${ID}`, { version: -1, op: delta.ops })
 })
 
 // Send cursor changes we made on quill

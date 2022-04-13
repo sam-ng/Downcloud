@@ -80,7 +80,7 @@ const openConnection = async (req, res) => {
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
       if (clientID === source) {
-        return
+        res.write({ ack: op })
       }
 
       // logger.info(
@@ -88,6 +88,7 @@ const openConnection = async (req, res) => {
       // )
       // logger.info(`[connectController]: ${req.params.uid} \n source: ${source} `)
 
+      // FIXME: [op] -> op
       res.write(`data: ${JSON.stringify([op])}\n\n`)
     })
   })
@@ -131,7 +132,7 @@ const openConnection = async (req, res) => {
   })
 }
 
-const updateDocument = async (req, res) => {
+const updateDocument = asyncHandler(async (req, res) => {
   if (!req.body) {
     throw new Error('Missing body.')
   }
@@ -142,19 +143,20 @@ const updateDocument = async (req, res) => {
 
   const { docid, uid } = req.params
   const { version, op } = req.body
+  const clientID = uid
 
   logger.info(`[docController]: updating document`)
   logger.info(
     `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${op}} `
   )
 
-  const clientID = req.params.uid
-  op.forEach((oplist) => {
-    clients[clientID].doc.submitOp(oplist, { source: clientID })
-  })
-
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
-}
+  if (version === client[clientID].doc.version) {
+    clients[clientID].doc.submitOp(op, { source: clientID })
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+  } else {
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+  }
+})
 
 const updatePresence = async (req, res) => {
   if (!req.body) {
@@ -191,34 +193,29 @@ const updatePresence = async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
 }
 
-// const getDoc = async (req, res) => {
-//   if (!req.params) {
-//     throw new Error('No connection id specified.')
-//   }
+const getDoc = async (req, res) => {
+  if (!req.params) {
+    throw new Error('No connection id specified.')
+  }
 
-//   const clientID = req.params.uid
+  const { docid, uid } = req.params
+  const clientID = uid
 
-//   // logger.info(
-//   //   `[docController]: ${
-//   //     req.params.uid
-//   //   } \n clients[clientID].doc.data.ops: ${JSON.stringify(
-//   //     clients[clientID].doc.data.ops
-//   //   )} `
-//   // )
+  const doc = clients[clientID].doc
+  doc.fetch((err) => {
+    if (err) {
+      throw err
+    }
 
-//   const doc = clients[clientID].doc
-//   doc.fetch((err) => {
-//     if (err) throw err
-
-//     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
-
-//     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
-//   })
-// }
+    const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
+  })
+}
 
 module.exports = {
   getDocUI,
   openConnection,
   updateDocument,
   updatePresence,
+  getDoc,
 }

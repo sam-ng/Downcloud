@@ -55,6 +55,13 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log('Delta ' + JSON.stringify(delta))
   // console.log('Delta ' + JSON.stringify(delta.ops))
 
+  // disable text-change in quill
+  // get version number
+  // await until axios post to op bas been submitted
+  // enable editor
+
+  // queue of text-changes
+
   axios.post(`/doc/op/${docID}/${ID}`, { version: -1, op: delta.ops })
 })
 
