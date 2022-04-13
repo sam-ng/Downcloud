@@ -16592,7 +16592,7 @@ quill.on('selection-change', (range, oldRange, source) => {
 // Update quill when message is received from server event stream
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
-  // console.log(data)
+  console.log(data)
   if (data.cursor) {
     const cursors = quill.getModule('cursors')
     const { id, cursor } = data
@@ -16608,7 +16608,8 @@ evtSource.onmessage = (event) => {
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    quill.updateContents(data)
+    console.log('update')
+    quill.updateContents(data.op)
     version += 1
   }
 }
