@@ -33,8 +33,8 @@ const openConnection = async (req, res) => {
 
   const { docid, uid } = req.params
 
-  logger.info(`[docController]: opening connection stream`)
-  logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
+  // logger.info(`[docController]: opening connection stream`)
+  // logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
 
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
@@ -83,22 +83,28 @@ const openConnection = async (req, res) => {
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
-      logger.info(`[docController]: op: ${JSON.stringify(op)}`)
-      if (clientID === source) {
-        res.write(
-          `data: ${JSON.stringify({
-            ack: op,
-          })} \n\n`
-        )
-      } else {
-        // FIXME: [op] -> op
-        // res.write(`data: ${JSON.stringify([op])}\n\n`)
-        res.write(
-          `data: ${JSON.stringify({
-            op,
-          })} \n\n`
-        )
-      }
+      doc.fetch((err) => {
+        if (err) {
+          throw err
+        }
+
+        logger.info(`[docController]: op: ${JSON.stringify(op)}`)
+        if (clientID === source) {
+          logger.info(`ack op`)
+          res.write(
+            `data: ${JSON.stringify({
+              ack: op,
+              tempversion: doc.version,
+            })} \n\n`
+          )
+        } else {
+          logger.info(`update op from other client`)
+          // res.write(`data: ${JSON.stringify(op)} \n\n`)
+          res.write(
+            `data: ${JSON.stringify({ op, tempversion: doc.version })} \n\n`
+          )
+        }
+      })
     })
   })
 
@@ -156,27 +162,18 @@ const updateDocument = asyncHandler(async (req, res) => {
 
   logger.info(`[docController]: updating document`)
   logger.info(
-    `[docController]: docid: ${docid}; uid: ${uid}; version: ${version}; op: ${JSON.stringify(
-      op
-    )}} `
+    `[docController]: docid: ${docid}; uid: ${uid}; op: ${JSON.stringify(op)}} `
   )
 
   const doc = clients[clientID].doc
-  doc.fetch((err) => {
-    if (err) {
-      throw err
-    }
-    console.log(version)
-    console.log(doc.version)
+  logger.info(`version: ${version}; doc.version: ${doc.version}`)
 
-    if (version === doc.version) {
-      console.log('submit')
-      clients[clientID].doc.submitOp(op, { source: clientID })
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-    } else {
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
-    }
-  })
+  if (version === doc.version) {
+    clients[clientID].doc.submitOp(op, { source: clientID })
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+  } else {
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+  }
 })
 
 const updatePresence = async (req, res) => {
@@ -195,9 +192,9 @@ const updatePresence = async (req, res) => {
   const range = req.body
   range.name = req.session.name
 
-  logger.info(`[docController]: updating presence`)
-  logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
-  logger.info(`[docController]: index: ${index}; length: ${length}`)
+  // logger.info(`[docController]: updating presence`)
+  // logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
+  // logger.info(`[docController]: index: ${index}; length: ${length}`)
 
   // logger.info(
   //   `user: ${

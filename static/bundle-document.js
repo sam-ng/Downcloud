@@ -16520,6 +16520,8 @@ const ID = uuidv4()
 const path = window.location.pathname
 const docID = path.split('/').slice(-1)[0]
 let version = -1
+let waitingForAck = false // flag to identify waiting for server's ack
+let opQueue = []
 
 // Set up event stream to listen to events from server
 const evtSource = new EventSource(`/doc/connect/${docID}/${ID}`)
@@ -16557,6 +16559,26 @@ function imageHandler() {
   }
 }
 
+// // Helper to combine opQueue
+// const aggregateOpQueue = () => {
+//   const updatedVersion = version + opQueue.length
+//   const aggregateOps = [].concat(...opQueue)
+//   opQueue = []
+
+//   return { version: updatedVersion, op: aggregateOps }
+// }
+
+// Helper to send op request
+const sendOpQueue = () => {
+  if (!waitingForAck && opQueue.length > 0) {
+    const { op } = opQueue.shift()
+    console.log('submitting: ', JSON.stringify({ version, op }))
+    axios.post(`/doc/op/${docID}/${ID}`, { version, op })
+
+    waitingForAck = true
+  }
+}
+
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
   // Don't send changes to shareDB if we didn't make the change
@@ -16566,14 +16588,20 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log('Delta ' + JSON.stringify(delta))
   // console.log('Delta ' + JSON.stringify(delta.ops))
 
-  // disable text-change in quill
-  // get version number
-  // await until axios post to op bas been submitted
-  // enable editor
+  // Store op in queue
 
-  // queue of text-changes
+  opQueue.push({ op: delta.ops })
 
-  axios.post(`/doc/op/${docID}/${ID}`, { version, op: delta.ops })
+  sendOpQueue()
+
+  // // Send first op change
+  // if (!waitingForAck) {
+  //   // Take values out of opQueue and aggregate
+
+  // axios.post(`/doc/op/${docID}/${ID}`, { version, op: delta.ops })
+  //   waitingForAck = true
+  // }
+  // axios.post(`/doc/op/${docID}/${ID}`, { version, op: delta.ops })
 })
 
 // Send cursor changes we made on quill
@@ -16592,23 +16620,32 @@ quill.on('selection-change', (range, oldRange, source) => {
 // Update quill when message is received from server event stream
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
-  console.log(data)
+  // console.log('data from evtSource: ', data)
   if (data.cursor) {
     const cursors = quill.getModule('cursors')
     const { id, cursor } = data
     cursors.createCursor(id, cursor.name, '#000')
     cursors.moveCursor(id, cursor)
+  } else if ('cursor' in data && data.cursor === null) {
+    // null cursor
+    console.log('null cursor: ', data)
   } else if (data.ack) {
     // Acknowledged our change
+    console.log('acked: ', data)
     version += 1
+    waitingForAck = false
+    sendOpQueue()
   } else if (data.content) {
     // Get inital document
+    console.log('initial doc: ', data)
     quill.setContents(data.content)
     version = data.version
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    console.log('update')
+    console.log('update doc from other clients: ', data)
+    // FIXME: change back from data.op -> data
+    // quill.updateContents(data)
     quill.updateContents(data.op)
     version += 1
   }
