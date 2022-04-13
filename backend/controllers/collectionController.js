@@ -46,7 +46,7 @@ const createDoc = asyncHandler(async (req, res) => {
 })
 
 // Deletes a document
-const deleteDoc = asyncHandler(async (req, res) => {
+const deleteDoc = asyncHandler(async (req, res, next) => {
   if (!req.body) {
     logger.error('[deleteController]: doc ID was not specified')
   }
@@ -63,8 +63,7 @@ const deleteDoc = asyncHandler(async (req, res) => {
       doc.destroy()
       DocumentMap.deleteOne({ docID })
     } else {
-      // FIXME:
-      logger.error('[deleteController]: doc ID does not exist')
+      next(new Error('docid does not exist'))
     }
 
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
