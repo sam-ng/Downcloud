@@ -16648,7 +16648,7 @@ evtSource.onmessage = (event) => {
     // console.log('null cursor: ', data)
   } else if (data.ack) {
     // Acknowledged our change
-    console.log('acked: ', data)
+    // console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
@@ -16662,7 +16662,7 @@ evtSource.onmessage = (event) => {
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    console.log('update doc from other clients: ', data)
+    // console.log('update doc from other clients: ', data)
     // FIXME: change back from data.op -> data
     // quill.updateContents(data)
     quill.updateContents(data.op)

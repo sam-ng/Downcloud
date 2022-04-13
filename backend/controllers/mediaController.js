@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler')
 const path = require('path')
 const multer = require('multer')
+const { logger } = require('sharedb')
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -14,7 +15,15 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 10000000 },
-  // limits: { fileSize: 1048576 },
+  fileFilter: (req, file, cb) => {
+    const whitelist = ['image/png', 'image/jpeg', 'image/jpg']
+
+    if (!whitelist.includes(file.mimetype)) {
+      return cb(new Error('file is not allowed'))
+    }
+
+    cb(null, true)
+  },
 }).single('image')
 
 const uploadWrapper = asyncHandler(async (req, res, next) => {
