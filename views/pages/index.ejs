@@ -38,10 +38,27 @@
       >
       <ul id="doc-id-list" class="collection">
         <% docIDNameList.forEach((docIDName) => { %>
-        <a href="/doc/edit/<%= docIDName.docID %>" class="collection-item"
-          >Document <%= docIDName.name %></a
+        <a
+          href="/doc/edit/<%= docIDName.docID %>"
+          class="h-stack collection-item"
+          ><span>Document <%= docIDName.name %></span>
+          <form action="/collection/delete" method="post" id="delete-doc-form">
+            <input
+              type="hidden"
+              id="docid"
+              name="docid"
+              value="<%= docIDName.docID %>"
+            />
+            <button
+              class="btn waves-effect waves-light red"
+              type="submit"
+              form="delete-doc-form"
+            >
+              <i class="material-icons">close</i>
+            </button>
+          </form>
+          <%}) %></a
         >
-        <%}) %>
       </ul>
       <% } else { %>
 
