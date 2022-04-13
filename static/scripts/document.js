@@ -2,6 +2,7 @@ const Quill = require('quill')
 const QuillCursors = require('quill-cursors')
 const { v4: uuidv4 } = require('uuid')
 const axios = require('axios')
+const tinycolor = require('tinycolor2')
 
 Quill.register('modules/cursors', QuillCursors)
 
@@ -12,6 +13,9 @@ const docID = path.split('/').slice(-1)[0]
 let version = -1
 let waitingForAck = false // flag to identify waiting for server's ack
 let opQueue = []
+
+// Cursor colors
+let colors = {}
 
 // Set up event stream to listen to events from server
 const evtSource = new EventSource(`/doc/connect/${docID}/${ID}`)
@@ -131,8 +135,9 @@ evtSource.onmessage = (event) => {
   if (data.presence) {
     const cursors = quill.getModule('cursors')
     const { id, cursor } = data.presence
+    colors[id] = colors[id] || tinycolor.random().toHexString()
     if (cursor) {
-      cursors.createCursor(id, cursor.name, '#000')
+      cursors.createCursor(id, cursor.name, colors[id])
       cursors.moveCursor(id, cursor)
     } else {
       cursors.removeCursor(id)

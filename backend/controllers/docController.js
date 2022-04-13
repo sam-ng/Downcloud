@@ -140,6 +140,7 @@ const openConnection = async (req, res) => {
 
   // Client closed the connection
   req.on('close', () => {
+    logger.info('client closed the connection')
     // logger.info(`[connectController]: ${req.params.uid} \n connection closed `)
     presence.destroy()
     res.end()
