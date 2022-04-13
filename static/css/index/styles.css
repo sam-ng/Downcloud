@@ -2,6 +2,12 @@
   margin-left: 5px;
 }
 
+.h-stack {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 strong {
   font-weight: bold !important;
 }

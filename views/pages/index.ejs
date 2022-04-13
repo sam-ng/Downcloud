@@ -19,7 +19,18 @@
   <body>
     <div class="container">
       <% if (auth) { %>
-      <h1>Documents</h1>
+      <div class="h-stack">
+        <h1>Documents</h1>
+        <form action="/users/logout" method="post" id="logout-form">
+          <button
+            class="btn waves-effect waves-light"
+            type="submit"
+            form="logout-form"
+          >
+            Logout
+          </button>
+        </form>
+      </div>
       <a
         id="create-btn"
         class="create-btn btn-floating btn-large waves-effect waves-light blue right"
