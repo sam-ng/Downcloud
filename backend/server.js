@@ -15,7 +15,11 @@ const port = process.env.SERVER_PORT || 8000
 
 // Dictionary of client tabs
 const clients = {}
-module.exports = { clients }
+
+// Dictionary mapping docids to names
+const docIDNamePairs = {}
+
+module.exports = { clients, docIDNamePairs }
 
 connectDatabase()
 const app = express()
@@ -58,6 +62,9 @@ app.use(express.static('node_modules/quill/dist')) // for quill css
 // Account Endpoints
 app.use('/users', require('./routes/userRoutes'))
 
+// Collection Endpoints
+app.use('/collection', protect, require('./routes/collectionRoutes'))
+
 // Document Create/Edit/Access Endpoints
 app.use('/create', protect, require('./routes/createRoutes')) // SUBJECT TO CHANGE: Logged in users can create new documents
 // app.use('/connect', protect, require('./routes/connectRoutes'))
@@ -80,7 +87,7 @@ app.get('/signup', (req, res) => {
 app.use('/media', protect, require('./routes/mediaRoutes'))
 
 // Frontend Home
-app.get('/', listController.renderHome)
+// app.get('/', listController.renderHome)
 
 // Error handler
 app.use(errorHandler)
