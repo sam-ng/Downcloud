@@ -66,7 +66,7 @@ function imageHandler() {
 const sendOpQueue = async () => {
   // console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
-    // console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
+    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
     waitingForAck = true
 
     // Submit op and wait for response
@@ -75,7 +75,7 @@ const sendOpQueue = async () => {
       op: opQueue[0],
     })
 
-    // console.log(`response.data.status: ${response.data.status}`)
+    console.log(`response.data.status: ${response.data.status}`)
 
     // Retry if server tells us to retry
     while (response.data.status == 'retry') {

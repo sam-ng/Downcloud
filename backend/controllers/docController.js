@@ -7,7 +7,6 @@ const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
-const connection = require('../config/connection')
 
 // Register rich text
 sharedb.types.register(richText.type)
@@ -162,56 +161,41 @@ const updateDocument = asyncHandler(async (req, res, next) => {
     throw new Error('uid does not exist')
   }
 
-  const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
-  doc.fetch((err) => {
-    if (err) {
-      throw err
-    }
+  // check if docid matches
+  const doc = clients[clientID].doc
+  if (docid !== doc.id) {
+    throw new Error('docid does not match doc.id of client')
+  }
 
-    if (doc.type === null) {
-      next(new Error('updating a doc that does not exist'))
-    }
+  logger.info(`[docController]: updating document`)
+  logger.info(
+    `[docController]: docid: ${docid}; uid: ${uid}; op: ${JSON.stringify(op)}} `
+  )
 
-    logger.info(`[docController]: updating document`)
-    logger.info(
-      `[docController]: docid: ${docid}; uid: ${uid}; op: ${JSON.stringify(
-        op
-      )}} `
-    )
+  logger.info(`version: ${version}; doc.version: ${doc.version}`)
 
-    // const doc = clients[clientID].doc
-    // Check that doc id in global clients matches the passed in url
-    if (clients[clientID].doc.id !== doc.id) {
-      next(
-        new Error('docid in url does not match doc id in global clients object')
+  if (version === doc.version) {
+    logger.info('version = doc.version, submitting op')
+    doc.submitOp(op, { source: clientID }, (err) => {
+      if (err) {
+        throw err
+      }
+
+      // once op is committed, this is called
+      // The version will only be incremented for local ops sent through submitOp() after the server has acknowledged the op, when the submitOp callback has been called.
+      // do we need await somewhere? idk
+      // wait let me see something
+      // hmm, we might need await if it's the sender
+      // let's see
+      logger.info(
+        `op has been commited to the server and version has been incremented. doc.version: ${doc.version} `
       )
-    }
-
-    logger.info(`version: ${version}; doc.version: ${doc.version}`)
-
-    if (version === doc.version) {
-      logger.info('version = doc.version, submitting op')
-      doc.submitOp(op, { source: clientID }, (err) => {
-        if (err) {
-          throw err
-        }
-
-        // once op is committed, this is called
-        // The version will only be incremented for local ops sent through submitOp() after the server has acknowledged the op, when the submitOp callback has been called.
-        // do we need await somewhere? idk
-        // wait let me see something
-        // hmm, we might need await if it's the sender
-        // let's see
-        logger.info(
-          `op has been commited to the server and version has been incremented. doc.version: ${doc.version} `
-        )
-      })
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-    } else {
-      logger.info('version != doc.version, no update')
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
-    }
-  })
+    })
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+  } else {
+    logger.info('version != doc.version, no update')
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+  }
 })
 
 const updatePresence = async (req, res) => {
@@ -257,23 +241,15 @@ const getDoc = async (req, res) => {
     throw new Error('uid does not exist')
   }
 
-  // const doc = clients[clientID].doc
-  const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
+  // check if docid matches
+  const doc = clients[clientID].doc
+  if (docid !== doc.id) {
+    throw new Error('docid does not match doc.id of client')
+  }
 
   doc.fetch((err) => {
     if (err) {
       throw err
-    }
-
-    if (doc.type === null) {
-      next(new Error('doc to fetch html does not exist'))
-    }
-
-    // Check that doc id in global clients matches the passed in url
-    if (clients[clientID].doc.id !== doc.id) {
-      next(
-        new Error('docid in url does not match doc id in global clients object')
-      )
     }
 
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()

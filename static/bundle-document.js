@@ -17773,7 +17773,7 @@ function imageHandler() {
 const sendOpQueue = async () => {
   // console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
-    // console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
+    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
     waitingForAck = true
 
     // Submit op and wait for response
@@ -17782,7 +17782,7 @@ const sendOpQueue = async () => {
       op: opQueue[0],
     })
 
-    // console.log(`response.data.status: ${response.data.status}`)
+    console.log(`response.data.status: ${response.data.status}`)
 
     // Retry if server tells us to retry
     while (response.data.status == 'retry') {
@@ -17851,7 +17851,7 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.ack) {
     // Acknowledged our change
-    // console.log('acked: ', data)
+    console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
@@ -17865,7 +17865,7 @@ evtSource.onmessage = (event) => {
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    // console.log('update doc from other clients: ', data)
+    console.log('update doc from other clients: ', data)
     // FIXME: change back from data.op -> data
     // quill.updateContents(data)
     quill.updateContents(data.op)
