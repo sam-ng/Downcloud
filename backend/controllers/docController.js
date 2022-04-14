@@ -7,7 +7,7 @@ const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
-const tinycolor = require('tinycolor2')
+const connection = require('../config/connection')
 
 // Register rich text
 sharedb.types.register(richText.type)
@@ -114,11 +114,6 @@ const openConnection = async (req, res) => {
     }
   })
   presence.on('receive', (id, range) => {
-    const colors = {}
-    colors[id] = colors[id] || tinycolor.random().toHexString()
-    const name = (range && range.name) || 'Anonymous'
-    // const cursorData = { id, name, color: colors[id], range }
-
     // console.log(id)
     // console.log(range)
     res.write(
@@ -149,7 +144,7 @@ const openConnection = async (req, res) => {
   })
 }
 
-const updateDocument = asyncHandler(async (req, res) => {
+const updateDocument = asyncHandler(async (req, res, next) => {
   if (!req.body) {
     throw new Error('Missing body.')
   }
@@ -162,36 +157,61 @@ const updateDocument = asyncHandler(async (req, res) => {
   const { version, op } = req.body
   const clientID = uid
 
-  logger.info(`[docController]: updating document`)
-  logger.info(
-    `[docController]: docid: ${docid}; uid: ${uid}; op: ${JSON.stringify(op)}} `
-  )
-
-  const doc = clients[clientID].doc
-  logger.info(`version: ${version}; doc.version: ${doc.version}`)
-
-  if (version === doc.version) {
-    logger.info('version = doc.version, submitting op')
-    clients[clientID].doc.submitOp(op, { source: clientID }, (err) => {
-      if (err) {
-        throw err
-      }
-
-      // once op is committed, this is called
-      // The version will only be incremented for local ops sent through submitOp() after the server has acknowledged the op, when the submitOp callback has been called.
-      // do we need await somewhere? idk
-      // wait let me see something
-      // hmm, we might need await if it's the sender
-      // let's see
-      logger.info(
-        `op has been commited to the server and version has been incremented. doc.version: ${doc.version} `
-      )
-    })
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-  } else {
-    logger.info('version != doc.version, no update')
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+  // check uid exist
+  if (!clients[clientID]) {
+    throw new Error('uid does not exist')
   }
+
+  const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
+  doc.fetch((err) => {
+    if (err) {
+      throw err
+    }
+
+    if (doc.type === null) {
+      next(new Error('updating a doc that does not exist'))
+    }
+
+    logger.info(`[docController]: updating document`)
+    logger.info(
+      `[docController]: docid: ${docid}; uid: ${uid}; op: ${JSON.stringify(
+        op
+      )}} `
+    )
+
+    // const doc = clients[clientID].doc
+    // Check that doc id in global clients matches the passed in url
+    if (clients[clientID].doc.id !== doc.id) {
+      next(
+        new Error('docid in url does not match doc id in global clients object')
+      )
+    }
+
+    logger.info(`version: ${version}; doc.version: ${doc.version}`)
+
+    if (version === doc.version) {
+      logger.info('version = doc.version, submitting op')
+      doc.submitOp(op, { source: clientID }, (err) => {
+        if (err) {
+          throw err
+        }
+
+        // once op is committed, this is called
+        // The version will only be incremented for local ops sent through submitOp() after the server has acknowledged the op, when the submitOp callback has been called.
+        // do we need await somewhere? idk
+        // wait let me see something
+        // hmm, we might need await if it's the sender
+        // let's see
+        logger.info(
+          `op has been commited to the server and version has been incremented. doc.version: ${doc.version} `
+        )
+      })
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+    } else {
+      logger.info('version != doc.version, no update')
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+    }
+  })
 })
 
 const updatePresence = async (req, res) => {
@@ -232,10 +252,28 @@ const getDoc = async (req, res) => {
   const { docid, uid } = req.params
   const clientID = uid
 
-  const doc = clients[clientID].doc
+  // check uid exist
+  if (!clients[clientID]) {
+    throw new Error('uid does not exist')
+  }
+
+  // const doc = clients[clientID].doc
+  const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
+
   doc.fetch((err) => {
     if (err) {
       throw err
+    }
+
+    if (doc.type === null) {
+      next(new Error('doc to fetch html does not exist'))
+    }
+
+    // Check that doc id in global clients matches the passed in url
+    if (clients[clientID].doc.id !== doc.id) {
+      next(
+        new Error('docid in url does not match doc id in global clients object')
+      )
     }
 
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
