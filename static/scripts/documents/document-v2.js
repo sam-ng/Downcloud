@@ -7,18 +7,16 @@ const tinycolor = require('tinycolor2')
 Quill.register('modules/cursors', QuillCursors)
 
 const ID = uuidv4()
-
 const path = window.location.pathname
 const docID = path.split('/').slice(-1)[0]
-let version = -1
-let waitingForAck = false // flag to identify waiting for server's ack
-let opQueue = []
-
-// Cursor colors
 let colors = {}
 
 // Set up event stream to listen to events from server
 const evtSource = new EventSource(`/doc/connect/${docID}/${ID}`)
+
+let version = -1
+let sentOps = []
+let queuedOps = []
 
 // Toolbar options
 const toolbar = [

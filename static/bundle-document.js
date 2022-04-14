@@ -17782,7 +17782,7 @@ const sendOpQueue = async () => {
       op: opQueue[0],
     })
 
-    console.log(`response.data.status: ${response.data.status}`)
+    // console.log(`response.data.status: ${response.data.status}`)
 
     // Retry if server tells us to retry
     while (response.data.status == 'retry') {
@@ -17851,7 +17851,7 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.ack) {
     // Acknowledged our change
-    // console.log('acked: ', data)
+    console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
