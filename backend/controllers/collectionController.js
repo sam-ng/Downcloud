@@ -18,6 +18,7 @@ const fetchDocumentMaps = async (docs) => {
 
 // Creates a document
 const createDoc = asyncHandler(async (req, res) => {
+  logger.info('creating a new doc')
   if (!req.body) {
     logger.error('[createController]: name was not specified')
   }

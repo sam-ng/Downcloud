@@ -67,6 +67,7 @@ app.get('/home', renderHome)
 app.get('/signup', (req, res) => {
   res.render('pages/signup')
 })
+app.get('/', renderHome)
 
 // Error handler
 app.use(errorHandler)

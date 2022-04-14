@@ -45,7 +45,7 @@ const addUser = asyncHandler(async (req, res) => {
     from: process.env.MAIL_SENDER,
     to: email,
     subject: 'Verify Your Email Address',
-    text: `Your verification code is: ${verificationCode}. Click here to verify: http://downcloud.cse356.compas.cs.stonybrook.edu/users/verify?email=${email}&key=${verificationCode}`,
+    text: `http://downcloud.cse356.compas.cs.stonybrook.edu/users/verify?email=${email}&key=${verificationCode}`,
   }
   transporter.sendMail(message, (err, info) => {
     if (err) {
@@ -56,7 +56,7 @@ const addUser = asyncHandler(async (req, res) => {
     }
   })
 
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -91,7 +91,7 @@ const loginUser = asyncHandler(async (req, res) => {
   req.session.auth = true
   req.session.name = user.name
 
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ name: user.name })
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -101,11 +101,21 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie('connect.sid', {
     path: '/',
   })
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
 const verifyUser = asyncHandler(async (req, res) => {
-  const { email, key } = req.query
+  let { email, key } = req.query
+  // logger.info(`req.query: ${JSON.stringify(req.query)}`)
+  // logger.info(
+  //   `encoded req.query: ${JSON.stringify(encodeURIComponent(req.query))}`
+  // )
+  // FIXME: urlencoded
+  email = email.replace(/ /g, '+')
+  // email = encodeURIComponent(email)
+  // logger.info(`updated email: ${email}`)
+  // email = decodeURIComponent(email)
+  // logger.info(`updated email: ${email}`)
 
   // Check all fields exist
   if (!email || !key) {
@@ -116,19 +126,22 @@ const verifyUser = asyncHandler(async (req, res) => {
   // Check user exists with email
   const user = await User.findOne({ email })
   if (!user) {
+    logger.info(`email: ${email}`)
     res.status(400)
-    throw new Error('Unable to verify')
+    throw new Error('User not found')
   }
 
   // Invalid code
   if (key != user.verificationCode /*&& key != process.env.BACKDOOR_KEY*/) {
+    logger.info(`key: ${key}`)
+    logger.info(`user.verificationCode: ${user.verificationCode}`)
     res.status(400)
     throw new Error('Unable to verify')
   }
 
   // Verified code
   await User.updateOne({ email }, { verified: true })
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
 module.exports = {

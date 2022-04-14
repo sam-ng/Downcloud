@@ -17851,7 +17851,7 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.ack) {
     // Acknowledged our change
-    console.log('acked: ', data)
+    // console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
@@ -17868,7 +17868,7 @@ evtSource.onmessage = (event) => {
     console.log('update doc from other clients: ', data)
     // FIXME: change back from data.op -> data
     // quill.updateContents(data)
-    quill.updateContents(data.op)
+    quill.updateContents(data)
     version += 1
   }
 }

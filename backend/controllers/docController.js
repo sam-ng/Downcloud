@@ -25,7 +25,7 @@ const getDocUI = asyncHandler(async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
 })
 
-const openConnection = async (req, res) => {
+const openConnection = async (req, res, next) => {
   if (!req.params) {
     throw new Error('No connection ID or document ID or presenceID specified.')
   }
@@ -71,7 +71,13 @@ const openConnection = async (req, res) => {
     //   )} `
     // )
 
+    if (doc.type === null) {
+      // res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json()
+      next(new Error('doc does not exist'))
+    }
+
     // Create event stream and initial doc data
+    logger.info(`line 80`)
     res.set(headers).write(
       `data: ${JSON.stringify({
         content: doc.data.ops,
@@ -82,22 +88,28 @@ const openConnection = async (req, res) => {
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
-      logger.info(`[docController]: op: ${JSON.stringify(op)}`)
+      // logger.info(`[docController]: op: ${JSON.stringify(op)}`)
       logger.info(`doc.version before if statment: ${doc.version}`)
       if (clientID === source) {
-        logger.info(`ack op`)
+        logger.info(`ack op: ${JSON.stringify(op)}`)
         res.write(
           `data: ${JSON.stringify({
             ack: op,
-            tempversion: doc.version,
           })} \n\n`
         )
       } else {
-        logger.info(`update op from other client`)
+        logger.info(`update op from other client: ${JSON.stringify(op)}`)
         // res.write(`data: ${JSON.stringify(op)} \n\n`)
-        res.write(
-          `data: ${JSON.stringify({ op, tempversion: doc.version })} \n\n`
-        )
+        // res.write(`data: ${JSON.stringify(op)} \n\n`)
+        // const resOp = { op: op.ops }
+        // logger.info({op: op.ops})
+
+        // logger.info(`${JSON.stringify(op)}`)
+        if (op.ops) {
+          res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
+        } else {
+          res.write(`data: ${JSON.stringify(op)} \n\n`)
+        }
       }
     })
   })
