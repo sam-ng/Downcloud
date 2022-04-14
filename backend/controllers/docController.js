@@ -32,8 +32,8 @@ const openConnection = async (req, res, next) => {
 
   const { docid, uid } = req.params
 
-  // logger.info(`[docController]: opening connection stream`)
-  // logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
+  logger.info(`[docController]: opening connection stream`)
+  logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
 
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
