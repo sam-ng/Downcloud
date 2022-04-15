@@ -25,7 +25,7 @@ const getDocUI = asyncHandler(async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
 })
 
-const openConnection = async (req, res, next) => {
+const openConnection = asyncHandler(async (req, res, next) => {
   if (!req.params) {
     throw new Error('No connection ID or document ID or presenceID specified.')
   }
@@ -58,6 +58,8 @@ const openConnection = async (req, res, next) => {
       next(new Error('doc does not exist'))
     }
 
+    logger.info('subscribed to doc')
+
     // Create event stream and initial doc data
     logger.info('sending back inital content and version, logged below: ')
     logger.info(doc.data.ops)
@@ -72,26 +74,21 @@ const openConnection = async (req, res, next) => {
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
       logger.info(`applying an op to a doc from source: ${source}`)
+      logger.info(`current doc.version: ${doc.version}`)
       logger.info(`op being applied:`)
       logger.info(op)
-      logger.info(`current doc.version: ${doc.version}`)
 
       if (clientID === source) {
-        logger.info(`ack op: ${JSON.stringify(op)}`)
-
+        logger.info(`acking client ${source} with ack op:`)
+        logger.info(op)
         res.write(
           `data: ${JSON.stringify({
             ack: op,
           })} \n\n`
         )
       } else {
-        logger.info(`update op from other client: ${JSON.stringify(op)}`)
-        // res.write(`data: ${JSON.stringify(op)} \n\n`)
-        // res.write(`data: ${JSON.stringify(op)} \n\n`)
-        // const resOp = { op: op.ops }
-        // logger.info({op: op.ops})
-
-        // logger.info(`${JSON.stringify(op)}`)
+        logger.info(`updating client ${source} with delta op:`)
+        logger.info(op)
         if (op.ops) {
           res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
         } else {
@@ -112,8 +109,8 @@ const openConnection = async (req, res, next) => {
     }
   })
   presence.on('receive', (id, range) => {
-    // console.log(id)
-    // console.log(range)
+    logger.info(`presence on receive with id: ${id} and range: `)
+    logger.info(range)
     res.write(
       `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
     )
@@ -133,14 +130,13 @@ const openConnection = async (req, res, next) => {
 
   // Client closed the connection
   req.on('close', () => {
-    logger.info('client closed the connection')
-    logger.info(`[connectController]: ${req.params.uid} \n connection closed `)
+    logger.info(`client ${uid} closed the connection`)
     presence.destroy()
     res.socket.destroy()
     res.end()
     delete clients[clientID]
   })
-}
+})
 
 const updateDocument = asyncHandler(async (req, res, next) => {
   if (!req.body) {
@@ -166,33 +162,26 @@ const updateDocument = asyncHandler(async (req, res, next) => {
     throw new Error('docid does not match doc.id of client')
   }
 
-  logger.info(`[docController]: updating document`)
-  logger.info(
-    `[docController]: docid: ${docid}; uid: ${uid}; op: ${JSON.stringify(op)}} `
-  )
-
-  logger.info(`version: ${version}; doc.version: ${doc.version}`)
+  logger.info(`client ${uid} attempting to update document ${docid}`)
+  logger.info(`op client sent: `)
+  logger.info(op)
+  logger.info(`version client sent:   ${version}`)
+  logger.info(`doc.version:           ${doc.verison}`)
 
   if (version >= doc.version) {
-    logger.info('version >= doc.version, submitting op')
+    logger.info('version >= doc.version, submitting op, telling client ok')
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
         throw err
       }
 
-      // once op is committed, this is called
-      // The version will only be incremented for local ops sent through submitOp() after the server has acknowledged the op, when the submitOp callback has been called.
-      // do we need await somewhere? idk
-      // wait let me see something
-      // hmm, we might need await if it's the sender
-      // let's see
       logger.info(
-        `op has been commited to the server and version has been incremented. doc.version: ${doc.version} `
+        `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
       )
     })
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
   } else {
-    logger.info('version != doc.version, no update')
+    logger.info('version < doc.version, no update, telling client to retry')
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
 })
@@ -206,22 +195,22 @@ const updatePresence = async (req, res) => {
     throw new Error('No connection id specified.')
   }
 
-  const clientID = req.params.uid
+  const { uid } = req.params
   const range = req.body // req.body is {index, length}
   range.name = req.session.name
+  const clientID = uid
 
-  // logger.info(`[docController]: updating presence`)
-
-  // logger.info(
-  //   `user: ${
-  //     req.session.name
-  //   }, clientID/tab: ${clientID}, range: ${JSON.stringify(range)} `
-  // )
+  logger.info(`updating presence for ${uid}`)
+  logger.info(`presence to submit: `)
+  logger.info(range)
 
   clients[clientID].localPresence.submit(range, (err) => {
     if (err) {
       throw err
     }
+
+    logger.info(`presence submitted: `)
+    logger.info(range)
   })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
@@ -246,12 +235,16 @@ const getDoc = async (req, res) => {
     throw new Error('docid does not match doc.id of client')
   }
 
+  logger.info(`getting doc ${docid} for ${uid}`)
+
   doc.fetch((err) => {
     if (err) {
       throw err
     }
 
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
+    logger.info(`html to send: `)
+    logger.info(html)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
   })
 }
