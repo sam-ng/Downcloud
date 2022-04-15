@@ -48,7 +48,6 @@ function imageHandler() {
 
 // Variables for submitting ops to server
 let version = -1
-// let waitingForAck = false // flag to identify waiting for server's ack
 let opQueue = []
 
 // Post an op to server
@@ -144,7 +143,6 @@ evtSource.onmessage = (event) => {
     // Acknowledged our change
     // console.log('acked op: ', data)
     version += 1
-    // waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
 
     if (opQueue.length > 0) {
@@ -156,21 +154,22 @@ evtSource.onmessage = (event) => {
     version += 1
 
     // Apply transformations
-    let incomingOp = new Delta(data)
-    let updatedIncomingOp = new Delta(data)
-    // console.log(`opQueue before tranforms: `, opQueue)
-    // console.log(`incomingOp before tranforms: `, incomingOp)
-    opQueue = opQueue.map((queueOp) => {
-      queueOp = new Delta(queueOp)
+    // let incomingOp = new Delta(data)
+    // let updatedIncomingOp = new Delta(data)
+    // // console.log(`opQueue before tranforms: `, opQueue)
+    // // console.log(`incomingOp before tranforms: `, incomingOp)
+    // opQueue = opQueue.map((queueOp) => {
+    //   queueOp = new Delta(queueOp)
 
-      const newQueueOp = incomingOp.transform(queueOp, true)
-      updatedIncomingOp = queueOp.transform(updatedIncomingOp, false)
+    //   const newQueueOp = incomingOp.transform(queueOp, true)
+    //   updatedIncomingOp = queueOp.transform(updatedIncomingOp, false)
 
-      return newQueueOp
-    })
+    //   return newQueueOp
+    // })
     // console.log(`opQueue after tranforms: `, opQueue)
     // console.log(`incomingOp after tranforms: `, updatedIncomingOp)
 
-    quill.updateContents(updatedIncomingOp)
+    // quill.updateContents(updatedIncomingOp)
+    quill.updateContents(data)
   }
 }

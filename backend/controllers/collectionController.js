@@ -18,9 +18,9 @@ const fetchDocumentMaps = async (docs) => {
 
 // Creates a document
 const createDoc = asyncHandler(async (req, res) => {
-  logger.info('creating a new doc')
+  // logger.info('creating a new doc')
   if (!req.body) {
-    logger.error('[createController]: name was not specified')
+    // logger.error('[createController]: name was not specified')
   }
   const docID = uuidv4()
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
@@ -38,9 +38,9 @@ const createDoc = asyncHandler(async (req, res) => {
         .json({ docid: docID })
     } else {
       // FIXME:
-      logger.error(
-        '[createController]: doc id already exists (should not happen)'
-      )
+      // logger.error(
+      //   '[createController]: doc id already exists (should not happen)'
+      // )
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').sendStatus(200)
     }
   })
@@ -49,7 +49,7 @@ const createDoc = asyncHandler(async (req, res) => {
 // Deletes a document
 const deleteDoc = asyncHandler(async (req, res, next) => {
   if (!req.body) {
-    logger.error('[deleteController]: doc ID was not specified')
+    // logger.error('[deleteController]: doc ID was not specified')
   }
 
   const docID = req.body.docid

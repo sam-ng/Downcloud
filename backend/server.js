@@ -73,5 +73,5 @@ app.get('/', renderHome)
 app.use(errorHandler)
 
 app.listen(port, () => {
-  logger.info(`Server started on port: ${port}`)
+  // logger.info(`Server started on port: ${port}`)
 })

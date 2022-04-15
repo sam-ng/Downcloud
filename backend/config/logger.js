@@ -5,6 +5,6 @@ const logger = winston.createLogger({
   silent: false, // FIXME: change to true before submitting
 })
 
-logger.info('Logger created')
+// logger.info('Logger created')
 
 module.exports = { logger }
