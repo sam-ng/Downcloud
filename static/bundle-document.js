@@ -17762,6 +17762,22 @@ function imageHandler() {
   }
 }
 
+// Helper to send post op
+const postOp = () => {
+  axios
+    .post(`/doc/op/${docID}/${ID}`, {
+      version,
+      op: opQueue[0],
+    })
+    .then((res) => {
+      if (res.data.status === 'ok') {
+        // do nothing
+      } else if (res.data.status === 'retry') {
+        postOp()
+      }
+    })
+}
+
 // Helper to send op request
 const sendOpQueue = async () => {
   // console.log('attempting to send opqueue')
@@ -17770,20 +17786,22 @@ const sendOpQueue = async () => {
     waitingForAck = true
 
     // Submit op and wait for response
-    let response = await axios.post(`/doc/op/${docID}/${ID}`, {
-      version,
-      op: opQueue[0],
-    })
+    // let response = await axios.post(`/doc/op/${docID}/${ID}`, {
+    //   version,
+    //   op: opQueue[0],
+    // })
 
     // console.log(`response.data.status: ${response.data.status}`)
 
     // Retry if server tells us to retry
-    while (response.data.status == 'retry') {
-      response = await axios.post(`/doc/op/${docID}/${ID}`, {
-        version,
-        op: opQueue[0],
-      })
-    }
+    // while (response.data.status == 'retry') {
+    //   response = await axios.post(`/doc/op/${docID}/${ID}`, {
+    //     version,
+    //     op: opQueue[0],
+    //   })
+    // }
+
+    postOp()
   }
   // console.log('exit sending opqueue')
 }

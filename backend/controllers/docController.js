@@ -31,9 +31,7 @@ const openConnection = async (req, res, next) => {
   }
 
   const { docid, uid } = req.params
-
-  logger.info(`[docController]: opening connection stream`)
-  logger.info(`[docController]: docid: ${docid}; uid: ${uid}`)
+  logger.info(`opening connection stream for uid: ${uid} in docid: ${docid} `)
 
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
@@ -59,36 +57,24 @@ const openConnection = async (req, res, next) => {
       throw err
     }
 
-    // logger.info(`[connectController]: client: ${req.params.uid}; subscribe to doc: ${req.params.docid} `)
-    // logger.info(
-    //   `[connectController]: ${req.params.uid} \n doc.data: ${JSON.stringify(
-    //     doc.data
-    //   )} `
-    // )
-    // logger.info(
-    //   `[connectController]: ${req.params.uid} \n doc.data.ops: ${JSON.stringify(
-    //     doc.data.ops
-    //   )} `
-    // )
-
     if (doc.type === null) {
-      // res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json()
       next(new Error('doc does not exist'))
     }
 
     // Create event stream and initial doc data
-    logger.info(`line 80`)
+    logger.info('sending back inital content and version: ')
+    logger.info(doc.data.ops)
+    logger.info(doc.version)
     res.set(headers).write(
       `data: ${JSON.stringify({
         content: doc.data.ops,
         version: doc.version,
       })} \n\n`
     )
-    // .write(`data: ${JSON.stringify({ content: doc.data.ops })} \n\n`)
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
-      // logger.info(`[docController]: op: ${JSON.stringify(op)}`)
+      logger.info('doc.on(op)')
       logger.info(`doc.version before if statment: ${doc.version}`)
       if (clientID === source) {
         logger.info(`ack op: ${JSON.stringify(op)}`)
@@ -147,7 +133,7 @@ const openConnection = async (req, res, next) => {
   // Client closed the connection
   req.on('close', () => {
     logger.info('client closed the connection')
-    // logger.info(`[connectController]: ${req.params.uid} \n connection closed `)
+    logger.info(`[connectController]: ${req.params.uid} \n connection closed `)
     presence.destroy()
     res.socket.destroy()
     res.end()
