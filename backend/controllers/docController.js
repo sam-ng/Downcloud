@@ -151,7 +151,7 @@ const openConnection = async (req, res, next) => {
     presence.destroy()
     res.socket.destroy()
     res.end()
-    // delete clients[clientID]
+    delete clients[clientID]
   })
 }
 
@@ -186,8 +186,8 @@ const updateDocument = asyncHandler(async (req, res, next) => {
 
   logger.info(`version: ${version}; doc.version: ${doc.version}`)
 
-  if (version === doc.version) {
-    logger.info('version = doc.version, submitting op')
+  if (version >= doc.version) {
+    logger.info('version >= doc.version, submitting op')
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
         throw err

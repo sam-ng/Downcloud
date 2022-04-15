@@ -17766,7 +17766,7 @@ function imageHandler() {
 const sendOpQueue = async () => {
   // console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
-    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
+    // console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
     waitingForAck = true
 
     // Submit op and wait for response
@@ -17785,7 +17785,7 @@ const sendOpQueue = async () => {
       })
     }
   }
-  console.log('exit sending opqueue')
+  // console.log('exit sending opqueue')
 }
 
 // Send changes we made to quill
@@ -17841,7 +17841,7 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.ack) {
     // Acknowledged our change
-    console.log('acked: ', data)
+    // console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
@@ -17855,7 +17855,7 @@ evtSource.onmessage = (event) => {
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    console.log('update doc from other clients: ', data)
+    // console.log('update doc from other clients: ', data)
     version += 1
 
     let incomingOp = new Delta(data)
