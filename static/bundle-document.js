@@ -17770,12 +17770,9 @@ const postOp = () => {
       op: opQueue[0],
     })
     .then((res) => {
-      if (res.data.status === 'ok') {
+      if (res.data.status == 'ok') {
         // console.log('post op succeeded with status ok')
-        // if (opQueue.length > 0) {
-        //   postOp()
-        // }
-      } else if (res.data.status === 'retry') {
+      } else if (res.data.status == 'retry') {
         postOp()
         // console.log('post op failed with status retry')
       }
@@ -17791,7 +17788,7 @@ quill.on('text-change', (delta, oldDelta, source) => {
 
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
-    // console.log('source is user, changes not pushed to queue')
+    // console.log('source is not user, changes not pushed to queue')
     return
   }
 

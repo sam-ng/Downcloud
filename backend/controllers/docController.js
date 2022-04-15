@@ -79,6 +79,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
       logger.info(op)
 
       if (clientID === source) {
+        logger.info(`clientID === source: ${clientID} === ${source}`)
         logger.info(`acking client ${source} with ack op:`)
         logger.info(op)
         res.write(
@@ -168,8 +169,8 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   logger.info(`version client sent:   ${version}`)
   logger.info(`doc.version:           ${doc.version}`)
 
-  if (version >= doc.version) {
-    logger.info('version >= doc.version, submitting op, telling client ok')
+  if (version === doc.version) {
+    logger.info('version === doc.version, submitting op, telling client ok')
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
         throw err
