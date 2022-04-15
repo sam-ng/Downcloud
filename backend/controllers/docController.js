@@ -20,9 +20,6 @@ const headers = {
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-// let sender = null
-
 const getDocUI = asyncHandler(async (req, res) => {
   // logger.info(`getting doc ui`)
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
@@ -79,7 +76,6 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
     if (!docVersions[doc.id]) {
       docVersions[doc.id] = doc.version
-      // docVersions[doc.id] = 1
     }
 
     // When we apply an op to the doc, update all other clients
@@ -190,7 +186,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   //     docVersions[doc.id]
   //   }; doc.version: ${doc.version}}`
   // )
-  if (version === docVersions[doc.id]) {
+  if (version >= docVersions[doc.id]) {
     // logger.info(`[CLIENT] doc version: ${version}`)
     // logger.info('version === doc.version, submitting op, telling client ok')
     docVersions[doc.id] = doc.version + 1
@@ -217,17 +213,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       )
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
     })
-  }
-  // else if (version > docVersions[doc.id]) {
-  //   docVersions[doc.id] += 1
-  //   doc.submitOp([{}], { source: clientID }, (err) => {
-  //     if (err) {
-  //       throw err
-  //     }
-  //     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-  //   })
-  // }
-  else {
+  } else {
     logger.info(
       `RETRY: client: ${version}, server: ${
         docVersions[doc.id]
