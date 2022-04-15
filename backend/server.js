@@ -17,10 +17,13 @@ const port = process.env.SERVER_PORT || 8000
 // Dictionary of client tabs
 const clients = {}
 
+// Dictionary of client versions
+const docVersions = {}
+
 // Dictionary mapping docids to names
 const docIDNamePairs = {}
 
-module.exports = { clients, docIDNamePairs }
+module.exports = { clients, docIDNamePairs, docVersions }
 
 connectDatabase()
 const app = express()

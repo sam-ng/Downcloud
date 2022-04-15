@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler')
 const QuillDeltaToHtmlConverter =
   require('quill-delta-to-html').QuillDeltaToHtmlConverter
-const { clients } = require('../server')
+const { clients, docVersions } = require('../server')
 const { logger } = require('../config/logger')
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
@@ -31,7 +31,10 @@ const openConnection = asyncHandler(async (req, res, next) => {
   }
 
   const { docid, uid } = req.params
-  // logger.info(`opening connection stream for uid: ${uid} in docid: ${docid} `)
+  // if (Object.keys(clients).includes(uid)) {
+  //   return
+  // }
+  logger.info(`opening connection stream for uid: ${uid} in docid: ${docid} `)
 
   // Open WebSocket connection to ShareDB server
   const rws = new ReconnectingWebSocket(
@@ -70,6 +73,11 @@ const openConnection = asyncHandler(async (req, res, next) => {
         version: doc.version,
       })} \n\n`
     )
+
+    if (!docVersions[doc.id]) {
+      docVersions[doc.id] = doc.version
+      // docVersions[doc.id] = 1
+    }
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
@@ -168,20 +176,47 @@ const updateDocument = asyncHandler(async (req, res, next) => {
 
   // doc.submitOp(op, { source: clientID })
 
-  if (version === doc.version) {
+  logger.info(
+    `client version: ${version}; server version: ${
+      docVersions[doc.id]
+    }; doc.version: ${doc.version}}`
+  )
+  if (version >= docVersions[doc.id]) {
+    // logger.info(`[CLIENT] doc version: ${version}`)
     // logger.info('version === doc.version, submitting op, telling client ok')
+    docVersions[doc.id] += 1
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
         throw err
       }
 
-      logger.info(
-        `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
-      )
+      // rest docVersions to doc.version
+      docVersions[doc.id] = doc.version
+
+      // logger.info(
+      //   `[SERVER] doc version: ${docVersions[doc.id]}, doc version: ${
+      //     doc.version
+      //   }`
+      // )
+      // logger.info(
+      //   `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
+      // )
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
     })
-  } else {
-    logger.info('version < doc.version, no update, telling client to retry')
+  }
+  // else if (version > docVersions[doc.id]) {
+  //   docVersions[doc.id] += 1
+  //   doc.submitOp([{}], { source: clientID }, (err) => {
+  //     if (err) {
+  //       throw err
+  //     }
+  //     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+  //   })
+  // }
+  else {
+    logger.info(
+      'client version != server version, no update, telling client to retry'
+    )
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
 })
@@ -201,16 +236,16 @@ const updatePresence = async (req, res) => {
   const clientID = uid
 
   // logger.info(`updating presence for ${uid}`)
-  // logger.info(`presence to submit: `)
-  // logger.info(range)
+  logger.info(`presence to submit: `)
+  logger.info(range)
 
   clients[clientID].localPresence.submit(range, (err) => {
     if (err) {
       throw err
     }
 
-    // logger.info(`presence submitted: `)
-    // logger.info(range)
+    logger.info(`presence submitted: `)
+    logger.info(range)
   })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
@@ -234,17 +269,15 @@ const getDoc = async (req, res) => {
   if (docid !== doc.id) {
     throw new Error('docid does not match doc.id of client')
   }
-
-  // logger.info(`getting doc ${docid} for ${uid}`)
+  // else {
+  //   docVersions[doc.id] = doc.version
+  // }
 
   doc.fetch((err) => {
     if (err) {
       throw err
     }
-
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
-    // logger.info(`html to send: `)
-    // logger.info(html)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
   })
 }
