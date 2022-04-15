@@ -20,6 +20,9 @@ const headers = {
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+// let sender = null
+
 const getDocUI = asyncHandler(async (req, res) => {
   // logger.info(`getting doc ui`)
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
@@ -80,19 +83,24 @@ const openConnection = asyncHandler(async (req, res, next) => {
     }
 
     // When we apply an op to the doc, update all other clients
-    doc.on('op', (op, source) => {
-      // logger.info(`applying an op to a doc from source: ${source}`)
+    doc.on('op', async (op, source) => {
+      logger.info(`applying an op to a doc from source: ${source}`)
       // logger.info(`current doc.version: ${doc.version}`)
-      logger.info(`op being applied:`)
+      // logger.info(`op being applied:`)
       logger.info(op)
 
       if (clientID === source) {
-        logger.info(`acking client ${clientID}`)
-        res.write(
-          `data: ${JSON.stringify({
-            ack: op,
-          })} \n\n`
-        )
+        // await sleep(25)
+        // // sender = source
+        // // if (sender) {
+        // logger.info(`acking client ${clientID}`)
+        // // sender = null
+        // res.write(
+        //   `data: ${JSON.stringify({
+        //     ack: op,
+        //   })} \n\n`
+        // )
+        // }
       } else {
         logger.info(`updating client ${clientID}`)
         if (op.ops) {
@@ -138,6 +146,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
     presence.destroy()
+    doc.destroy()
     res.socket.destroy()
     res.end()
     delete clients[clientID]
@@ -169,8 +178,8 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   }
 
   // logger.info(`client ${uid} attempting to update document ${docid}`)
-  logger.info(`op client sent: `)
-  logger.info(op)
+  // logger.info(`op client sent: `)
+  // logger.info(op)
   // logger.info(`version client sent:   ${version}`)
   // logger.info(`doc.version:           ${doc.version}`)
 
@@ -181,7 +190,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       docVersions[doc.id]
     }; doc.version: ${doc.version}}`
   )
-  if (version >= docVersions[doc.id]) {
+  if (version === docVersions[doc.id]) {
     // logger.info(`[CLIENT] doc version: ${version}`)
     // logger.info('version === doc.version, submitting op, telling client ok')
     docVersions[doc.id] += 1
@@ -190,7 +199,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
         throw err
       }
 
-      // rest docVersions to doc.version
+      // reset docVersions to doc.version
       docVersions[doc.id] = doc.version
 
       // logger.info(
@@ -201,6 +210,11 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       // logger.info(
       //   `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
       // )
+      clients[clientID].res.write(
+        `data: ${JSON.stringify({
+          ack: op,
+        })} \n\n`
+      )
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
     })
   }
@@ -236,16 +250,16 @@ const updatePresence = async (req, res) => {
   const clientID = uid
 
   // logger.info(`updating presence for ${uid}`)
-  logger.info(`presence to submit: `)
-  logger.info(range)
+  // logger.info(`presence to submit: `)
+  // logger.info(range)
 
   clients[clientID].localPresence.submit(range, (err) => {
     if (err) {
       throw err
     }
 
-    logger.info(`presence submitted: `)
-    logger.info(range)
+    // logger.info(`presence submitted: `)
+    // logger.info(range)
   })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
@@ -278,6 +292,8 @@ const getDoc = async (req, res) => {
       throw err
     }
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
+    logger.info('getting doc html')
+    logger.info(html)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
   })
 }
