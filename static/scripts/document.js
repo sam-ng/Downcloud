@@ -52,9 +52,6 @@ let opQueue = []
 
 // Post an op to server
 const postOp = () => {
-  // console.log(`attempting to post op from client ${ID} to doc ${docID}`)
-  // console.log(`op to send to server: `, op)
-  // console.log(`version to send to server: ${version}`)
 
   axios
     .post(`/doc/op/${docID}/${ID}`, {
@@ -63,31 +60,21 @@ const postOp = () => {
     })
     .then((res) => {
       if (res.data.status == 'ok') {
-        // console.log('post op succeeded with status ok')
       } else if (res.data.status == 'retry') {
         postOp()
-        // console.log('post op failed with status retry')
       }
     })
 }
 
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
-  // console.log(`quill text-change event`)
-  // console.log(`delta: `, delta)
-  // console.log(`oldDelta: `, oldDelta)
-  // console.log(`source: `, source)
 
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
-    // console.log('source is not user, changes not pushed to queue')
     return
   }
 
   opQueue.push(delta.ops)
-  // console.log(`op pushed to queue`)
-  // console.log(`op pushed: `, delta.ops)
-  // console.log('opQueue: ', opQueue)
 
   if (opQueue.length === 1) {
     postOp()
@@ -96,36 +83,26 @@ quill.on('text-change', (delta, oldDelta, source) => {
 
 // Send cursor changes we made on quill
 quill.on('selection-change', (range, oldRange, source) => {
-  // console.log(`quill selection-change event`)
-  // console.log(`range: `, range)
-  // console.log(`oldRange: `, oldRange)
-  // console.log(`source: `, source)
 
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
-    // console.log('source is not user, selection change not sent to server')
     return
   }
 
   // If range is null, indicates focus lost => appears to everyone else that cursor is where it was before
   if (!range) {
-    // console.log(`range is null, indicates focus lost`)
     return
   }
 
-  // console.log(`posting presence from client ${ID} to doc ${docID}`)
   axios.post(`/doc/presence/${docID}/${ID}`, range).then((res) => {
-    // console.log(`presence update callback with res.status: `, res.status)
   })
 })
 
 // Update quill when message is received from server event stream
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
-  // console.log(`received message from event source: `, data)
   if (data.presence) {
     // Presence data
-    // console.log(`presence: `, data)
     const { id, cursor } = data.presence
     colors[id] = colors[id] || tinycolor.random().toHexString()
     if (cursor) {
@@ -136,12 +113,10 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.content) {
     // Get inital document
-    // console.log('initial doc: ', data)
     quill.setContents(data.content)
     version = data.version
   } else if (data.ack) {
     // Acknowledged our change
-    // console.log('acked op: ', data)
     version += 1
     opQueue.shift() // remove from queue after we have acknowledged
 
@@ -150,26 +125,21 @@ evtSource.onmessage = (event) => {
     }
   } else {
     // Update our doc contents based on ops from other clients
-    // console.log('op from other clients: ', data)
     version += 1
 
     // Apply transformations
-    // let incomingOp = new Delta(data)
-    // let updatedIncomingOp = new Delta(data)
-    // // console.log(`opQueue before tranforms: `, opQueue)
-    // // console.log(`incomingOp before tranforms: `, incomingOp)
-    // opQueue = opQueue.map((queueOp) => {
-    //   queueOp = new Delta(queueOp)
+    let incomingOp = new Delta(data)
+    let updatedIncomingOp = new Delta(data)
+    opQueue = opQueue.map((queueOp) => {
+      queueOp = new Delta(queueOp)
 
-    //   const newQueueOp = incomingOp.transform(queueOp, true)
-    //   updatedIncomingOp = queueOp.transform(updatedIncomingOp, false)
+      const newQueueOp = incomingOp.transform(queueOp, true)
+      updatedIncomingOp = queueOp.transform(updatedIncomingOp, false)
 
-    //   return newQueueOp
-    // })
-    // console.log(`opQueue after tranforms: `, opQueue)
-    // console.log(`incomingOp after tranforms: `, updatedIncomingOp)
+      return newQueueOp
+    })
 
-    // quill.updateContents(updatedIncomingOp)
-    quill.updateContents(data)
+    quill.updateContents(updatedIncomingOp)
+    // quill.updateContents(data)
   }
 }
