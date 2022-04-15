@@ -21,7 +21,7 @@ const headers = {
 }
 
 const getDocUI = asyncHandler(async (req, res) => {
-  // logger.info(`[docController]: getting doc ui`)
+  logger.info(`getting doc ui`)
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
 })
 
@@ -43,13 +43,10 @@ const openConnection = async (req, res, next) => {
     }
   )
   const connection = new sharedb.Connection(rws)
-  const clientID = req.params.uid
+  const clientID = uid
 
   // Get doc instance
-  const doc = connection.get(
-    process.env.CONNECTION_COLLECTION,
-    req.params.docid
-  )
+  const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
 
   // Get inital doc data from server and listen for changes
   doc.subscribe((err) => {
@@ -62,7 +59,7 @@ const openConnection = async (req, res, next) => {
     }
 
     // Create event stream and initial doc data
-    logger.info('sending back inital content and version: ')
+    logger.info('sending back inital content and version, logged below: ')
     logger.info(doc.data.ops)
     logger.info(doc.version)
     res.set(headers).write(
@@ -74,10 +71,14 @@ const openConnection = async (req, res, next) => {
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', (op, source) => {
-      logger.info('doc.on(op)')
-      logger.info(`doc.version before if statment: ${doc.version}`)
+      logger.info(`applying an op to a doc from source: ${source}`)
+      logger.info(`op being applied:`)
+      logger.info(op)
+      logger.info(`current doc.version: ${doc.version}`)
+
       if (clientID === source) {
         logger.info(`ack op: ${JSON.stringify(op)}`)
+
         res.write(
           `data: ${JSON.stringify({
             ack: op,
