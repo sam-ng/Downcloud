@@ -59,7 +59,7 @@ function imageHandler() {
 const sendOpQueue = async () => {
   // console.log('attempting to send opqueue')
   if (!waitingForAck && opQueue.length > 0) {
-    console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
+    // console.log('submitting: ', JSON.stringify({ version, op: opQueue[0] }))
     waitingForAck = true
 
     // Submit op and wait for response
@@ -78,11 +78,20 @@ const sendOpQueue = async () => {
       })
     }
   }
-  console.log('exit sending opqueue')
+  // console.log('exit sending opqueue')
 }
 
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
+  // FIXME: delete
+  // console.log('delta test')
+  // const a = new Delta().insert('a')
+  // const b = new Delta().insert('b').retain(5).insert('c')
+  // const aTrue = a.transform(b, true) // new Delta().retain(1).insert('b').retain(5).insert('c');
+  // const aFalse = a.transform(b, false) // new Delta().insert('b').retain(6).insert('c');
+  // console.log(aTrue)
+  // console.log(aFalse)
+
   // console.log('opqueue: ', opQueue)
 
   // Don't send changes to shareDB if we didn't make the change
@@ -125,7 +134,7 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.ack) {
     // Acknowledged our change
-    console.log('acked: ', data)
+    // console.log('acked: ', data)
     version += 1
     waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
@@ -139,39 +148,22 @@ evtSource.onmessage = (event) => {
   } else {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
-    console.log('update doc from other clients: ', data)
-    console.log('opQueue: ', opQueue)
+    // console.log('update doc from other clients: ', data)
     version += 1
+
     let incomingOp = new Delta(data)
 
+    let updatedIncomingOp = new Delta(data)
     // Apply transformations
     opQueue = opQueue.map((queueOp) => {
       queueOp = new Delta(queueOp)
-      // transforms
-      console.log(
-        'queueOp.transform(incomingOp, true): ',
-        queueOp.transform(incomingOp, true)
-      )
-      console.log(
-        'queueOp.transform(incomingOp, false): ',
-        queueOp.transform(incomingOp, false)
-      )
-      console.log(
-        'incomingOp.transform(queueOp, true): ',
-        incomingOp.transform(queueOp, true)
-      )
-      console.log(
-        'incomingOp.transform(queueOp, false): ',
-        incomingOp.transform(queueOp, false)
-      )
 
-      const newIncomingOp = incomingOp.transform(queueOp, true)
-      const newQueueOp = queueOp.transform(incomingOp, false)
+      const newQueueOp = incomingOp.transform(queueOp, true)
+      updatedIncomingOp = queueOp.transform(updatedIncomingOp, false)
 
-      incomingOp = newIncomingOp
       return newQueueOp
     })
 
-    quill.updateContents(data)
+    quill.updateContents(updatedIncomingOp)
   }
 }
