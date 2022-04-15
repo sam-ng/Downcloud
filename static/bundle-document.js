@@ -17750,6 +17750,8 @@ const quill = new Quill('#editor', {
     cursors: true,
   },
 })
+const cursors = quill.getModule('cursors')
+const Delta = Quill.import('delta')
 
 // Image handler
 function imageHandler() {
@@ -17759,15 +17761,6 @@ function imageHandler() {
     this.quill.insertEmbed(range.index, 'image', value, Quill.sources.USER)
   }
 }
-
-// // Helper to combine opQueue
-// const aggregateOpQueue = () => {
-//   const updatedVersion = version + opQueue.length
-//   const aggregateOps = [].concat(...opQueue)
-//   opQueue = []
-
-//   return { version: updatedVersion, op: aggregateOps }
-// }
 
 // Helper to send op request
 const sendOpQueue = async () => {
@@ -17792,7 +17785,7 @@ const sendOpQueue = async () => {
       })
     }
   }
-  // console.log('exit sending opqueue')
+  console.log('exit sending opqueue')
 }
 
 // Send changes we made to quill
@@ -17807,19 +17800,8 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log('Delta ' + JSON.stringify(delta.ops))
 
   // Store op in queue
-
   opQueue.push(delta.ops)
-
   sendOpQueue()
-
-  // // Send first op change
-  // if (!waitingForAck) {
-  //   // Take values out of opQueue and aggregate
-
-  // axios.post(`/doc/op/${docID}/${ID}`, { version, op: delta.ops })
-  //   waitingForAck = true
-  // }
-  // axios.post(`/doc/op/${docID}/${ID}`, { version, op: delta.ops })
 })
 
 // Send cursor changes we made on quill
@@ -17840,7 +17822,6 @@ evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
   // console.log('data from evtSource: ', data)
   if (data.presence) {
-    const cursors = quill.getModule('cursors')
     const { id, cursor } = data.presence
     colors[id] = colors[id] || tinycolor.random().toHexString()
     if (cursor) {
@@ -17866,10 +17847,39 @@ evtSource.onmessage = (event) => {
     // Update doc contents from other clients
     // data.forEach((oplist) => quill.updateContents(oplist))
     console.log('update doc from other clients: ', data)
-    // FIXME: change back from data.op -> data
-    // quill.updateContents(data)
-    quill.updateContents(data)
+    console.log('opQueue: ', opQueue)
     version += 1
+    let incomingOp = new Delta(data)
+
+    // Apply transformations
+    opQueue = opQueue.map((queueOp) => {
+      queueOp = new Delta(queueOp)
+      // transforms
+      console.log(
+        'queueOp.transform(incomingOp, true): ',
+        queueOp.transform(incomingOp, true)
+      )
+      console.log(
+        'queueOp.transform(incomingOp, false): ',
+        queueOp.transform(incomingOp, false)
+      )
+      console.log(
+        'incomingOp.transform(queueOp, true): ',
+        incomingOp.transform(queueOp, true)
+      )
+      console.log(
+        'incomingOp.transform(queueOp, false): ',
+        incomingOp.transform(queueOp, false)
+      )
+
+      const newIncomingOp = queueOp.transform(incomingOp, true)
+      const newQueueOp = queueOp.transform(incomingOp, false)
+
+      incomingOp = newIncomingOp
+      return newQueueOp
+    })
+
+    quill.updateContents(data)
   }
 }
 
