@@ -48,7 +48,7 @@ function imageHandler() {
 
 // Variables for submitting ops to server
 let version = -1
-let waitingForAck = false // flag to identify waiting for server's ack
+// let waitingForAck = false // flag to identify waiting for server's ack
 let opQueue = []
 
 // Post an op to server
@@ -65,43 +65,14 @@ const postOp = () => {
     .then((res) => {
       if (res.data.status === 'ok') {
         // console.log('post op succeeded with status ok')
+        // if (opQueue.length > 0) {
+        //   postOp()
+        // }
       } else if (res.data.status === 'retry') {
         postOp()
         // console.log('post op failed with status retry')
       }
     })
-}
-
-// Attempt to send a queued op to the server
-const sendAnOpFromQueue = async () => {
-  // console.log('attempting to send an op from queue')
-  // console.log(`waitingForAck: ${waitingForAck}`)
-  // console.log(`opQueue.length: ${opQueue.length}`)
-  if (!waitingForAck && opQueue.length > 0) {
-    // console.log('conditions met, proceeding')
-    // console.log(`waitingForAck set to true`)
-
-    waitingForAck = true
-    postOp()
-
-    // Submit op and wait for response
-    // let response = await axios.post(`/doc/op/${docID}/${ID}`, {
-    //   version,
-    //   op: opQueue[0],
-    // })
-
-    // console.log(`response.data.status: ${response.data.status}`)
-
-    // Retry if server tells us to retry
-    // while (response.data.status == 'retry') {
-    //   response = await axios.post(`/doc/op/${docID}/${ID}`, {
-    //     version,
-    //     op: opQueue[0],
-    //   })
-    // }
-  } else {
-    // console.log('failed to send an op from queue, conditions not met')
-  }
 }
 
 // Send changes we made to quill
@@ -122,7 +93,9 @@ quill.on('text-change', (delta, oldDelta, source) => {
   // console.log(`op pushed: `, delta.ops)
   // console.log('opQueue: ', opQueue)
 
-  sendAnOpFromQueue()
+  if (opQueue.length === 1) {
+    postOp()
+  }
 })
 
 // Send cursor changes we made on quill
@@ -174,10 +147,12 @@ evtSource.onmessage = (event) => {
     // Acknowledged our change
     // console.log('acked op: ', data)
     version += 1
-    waitingForAck = false
+    // waitingForAck = false
     opQueue.shift() // remove from queue after we have acknowledged
 
-    sendAnOpFromQueue()
+    if (opQueue.length > 0) {
+      postOp()
+    }
   } else {
     // Update our doc contents based on ops from other clients
     // console.log('op from other clients: ', data)

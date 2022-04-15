@@ -166,7 +166,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   logger.info(`op client sent: `)
   logger.info(op)
   logger.info(`version client sent:   ${version}`)
-  logger.info(`doc.version:           ${doc.verison}`)
+  logger.info(`doc.version:           ${doc.version}`)
 
   if (version >= doc.version) {
     logger.info('version >= doc.version, submitting op, telling client ok')
