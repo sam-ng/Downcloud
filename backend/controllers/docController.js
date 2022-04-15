@@ -84,10 +84,10 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
     // When we apply an op to the doc, update all other clients
     doc.on('op', async (op, source) => {
-      logger.info(`applying an op to a doc from source: ${source}`)
+      // logger.info(`applying an op to a doc from source: ${source}`)
       // logger.info(`current doc.version: ${doc.version}`)
       // logger.info(`op being applied:`)
-      logger.info(op)
+      // logger.info(op)
 
       if (clientID === source) {
         // await sleep(25)
@@ -102,7 +102,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
         // )
         // }
       } else {
-        logger.info(`updating client ${clientID}`)
+        // logger.info(`updating client ${clientID}`)
         if (op.ops) {
           res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
         } else {
@@ -149,7 +149,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
     doc.destroy()
     res.socket.destroy()
     res.end()
-    delete clients[clientID]
+    // delete clients[clientID]
   })
 })
 
@@ -185,15 +185,15 @@ const updateDocument = asyncHandler(async (req, res, next) => {
 
   // doc.submitOp(op, { source: clientID })
 
-  logger.info(
-    `client version: ${version}; server version: ${
-      docVersions[doc.id]
-    }; doc.version: ${doc.version}}`
-  )
+  // logger.info(
+  //   `client version: ${version}; server version: ${
+  //     docVersions[doc.id]
+  //   }; doc.version: ${doc.version}}`
+  // )
   if (version === docVersions[doc.id]) {
     // logger.info(`[CLIENT] doc version: ${version}`)
     // logger.info('version === doc.version, submitting op, telling client ok')
-    docVersions[doc.id] += 1
+    docVersions[doc.id] = doc.version + 1
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
         throw err
@@ -229,8 +229,11 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   // }
   else {
     logger.info(
-      'client version != server version, no update, telling client to retry'
+      `RETRY: client: ${version}, server: ${
+        docVersions[doc.id]
+      }, doc.version: ${doc.version}`
     )
+    logger.info(op)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
 })
@@ -292,8 +295,8 @@ const getDoc = async (req, res) => {
       throw err
     }
     const html = new QuillDeltaToHtmlConverter(doc.data.ops).convert()
-    logger.info('getting doc html')
-    logger.info(html)
+    // logger.info('getting doc html')
+    // logger.info(html)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
   })
 }
