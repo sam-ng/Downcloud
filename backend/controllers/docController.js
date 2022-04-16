@@ -78,70 +78,68 @@ const openConnection = asyncHandler(async (req, res, next) => {
       })} \n\n`
     )
 
-    // if (!docVersions[doc.id]) {
-    //   docVersions[doc.id] = doc.version
-    // }
-
-    // When we apply an op to the doc, update all other clients
-    doc.on('op', (op, source) => {
-      // logger.info(`applying an op to a doc from source: ${source}`)
-      // logger.info(`current doc.version: ${doc.version}`)
-      // logger.info(`op being applied:`)
-      // logger.info(op)
-
-      if (clientID === source) {
-        // logger.info(`acking client ${clientID}`)
-        // res.write(
-        //   `data: ${JSON.stringify({
-        //     ack: op,
-        //   })} \n\n`
-        // )
-        // }
-      } else {
-        // logger.info(`updating client ${clientID}`)
-        if (op.ops) {
-          res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
-        } else {
-          res.write(`data: ${JSON.stringify(op)} \n\n`)
-        }
-      }
-    })
-
-    // Get presence
-    const presence = doc.connection.getDocPresence(
-      process.env.CONNECTION_COLLECTION,
-      req.params.docid
-    )
-    presence.subscribe((err) => {
-      if (err) {
-        throw err
-      }
-    })
-    presence.on('receive', (id, range) => {
-      // logger.info(`presence on receive with id: ${id} and range: `)
-      // logger.info(range)
-      res.write(
-        `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
-      )
-    })
-    const localPresence = presence.create(clientID)
-
-    // Store client info
-    const clientObj = {
-      clientID,
-      res,
-      connection,
-      doc,
-      presence,
-      localPresence,
+    if (!docVersions[doc.id]) {
+      docVersions[doc.id] = doc.version
     }
-    clients[clientID] = clientObj
   })
+  // When we apply an op to the doc, update all other clients
+  doc.on('op', (op, source) => {
+    // logger.info(`applying an op to a doc from source: ${source}`)
+    // logger.info(`current doc.version: ${doc.version}`)
+    // logger.info(`op being applied:`)
+    // logger.info(op)
+
+    if (clientID === source) {
+      // logger.info(`acking client ${clientID}`)
+      // res.write(
+      //   `data: ${JSON.stringify({
+      //     ack: op,
+      //   })} \n\n`
+      // )
+    } else {
+      // logger.info(`updating client ${clientID}`)
+      if (op.ops) {
+        res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
+      } else {
+        res.write(`data: ${JSON.stringify(op)} \n\n`)
+      }
+    }
+  })
+
+  // Get presence
+  const presence = doc.connection.getDocPresence(
+    process.env.CONNECTION_COLLECTION,
+    req.params.docid
+  )
+  presence.subscribe((err) => {
+    if (err) {
+      throw err
+    }
+  })
+  presence.on('receive', (id, range) => {
+    // logger.info(`presence on receive with id: ${id} and range: `)
+    // logger.info(range)
+    res.write(
+      `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
+    )
+  })
+  const localPresence = presence.create(clientID)
+
+  // Store client info
+  const clientObj = {
+    clientID,
+    res,
+    connection,
+    doc,
+    presence,
+    localPresence,
+  }
+  clients[clientID] = clientObj
 
   // Client closed the connection
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
-    clients[clientID].presence.destroy()
+    presence.destroy()
     doc.destroy()
     res.socket.destroy()
     res.end()
@@ -149,6 +147,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
   })
 })
 
+let lastSubmittedVersion;
 const updateDocument = asyncHandler(async (req, res, next) => {
   if (!req.body) {
     throw new Error('Missing body.')
@@ -192,17 +191,18 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   doc.fetch((err) => {
     if (err) throw err
 
-    if (version >= /* docVersions[doc.id] */ doc.version) {
+    if (version !== lastSubmittedVersion && version >= docVersions[doc.id] /* doc.version */) {
       // logger.info(`[CLIENT] doc version: ${version}`)
       // logger.info('version === doc.version, submitting op, telling client ok')
-      // docVersions[doc.id] = doc.version + 1
+      docVersions[doc.id] = doc.version + 1
+      lastSubmittedVersion = version;
       doc.submitOp(op, { source: clientID }, (err) => {
         if (err) {
           throw err
         }
 
         // reset docVersions to doc.version
-        // docVersions[doc.id] = doc.version
+        docVersions[doc.id] = doc.version
 
         // logger.info(
         //   `[SERVER] doc version: ${docVersions[doc.id]}, doc version: ${
