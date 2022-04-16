@@ -17759,7 +17759,6 @@ let opQueue = []
 
 // Post an op to server
 const postOp = () => {
-
   axios
     .post(`/doc/op/${docID}/${ID}`, {
       version,
@@ -17775,7 +17774,6 @@ const postOp = () => {
 
 // Send changes we made to quill
 quill.on('text-change', (delta, oldDelta, source) => {
-
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
     return
@@ -17790,7 +17788,6 @@ quill.on('text-change', (delta, oldDelta, source) => {
 
 // Send cursor changes we made on quill
 quill.on('selection-change', (range, oldRange, source) => {
-
   // Don't send changes to shareDB if we didn't make the change
   if (source !== 'user') {
     return
@@ -17801,8 +17798,7 @@ quill.on('selection-change', (range, oldRange, source) => {
     return
   }
 
-  axios.post(`/doc/presence/${docID}/${ID}`, range).then((res) => {
-  })
+  axios.post(`/doc/presence/${docID}/${ID}`, range).then((res) => {})
 })
 
 // Update quill when message is received from server event stream
@@ -17820,6 +17816,7 @@ evtSource.onmessage = (event) => {
     }
   } else if (data.content) {
     // Get inital document
+    // console.log(data)
     quill.setContents(data.content)
     version = data.version
   } else if (data.ack) {

@@ -23,7 +23,10 @@ const docVersions = {}
 // Dictionary mapping docids to names
 const docIDNamePairs = {}
 
-module.exports = { clients, docIDNamePairs, docVersions }
+// Dictionary of docids to docs
+const docIDToDocs = {}
+
+module.exports = { clients, docIDNamePairs, docVersions, docIDToDocs }
 
 connectDatabase()
 const app = express()
