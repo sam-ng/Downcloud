@@ -43,7 +43,17 @@ const openConnection = asyncHandler(async (req, res, next) => {
     docIDToDocs[docid] = doc
 
     // Set up event listeners
-    doc.subscribe()
+    doc.subscribe((err) => {
+      if (err) {
+        throw err
+      }
+
+      // Save doc version
+      if (!docVersions[doc.id]) {
+        docVersions[doc.id] = doc.version
+        logger.info(`set initial docVersions[doc.id]: ${docVersions[doc.id]}`)
+      }
+    })
 
     // // When we apply an op to the doc, update all other clients
     // doc.on('op', (op, source) => {
@@ -54,18 +64,14 @@ const openConnection = asyncHandler(async (req, res, next) => {
     // })
 
     // Subscribe presence
-    const presence = doc.connection.getDocPresence(
-      process.env.CONNECTION_COLLECTION,
-      docid
-    )
+    // const presence = doc.connection.getDocPresence(
+    //   process.env.CONNECTION_COLLECTION,
+    //   docid
+    // )
+    const presence = connection.getPresence(docid)
     presence.subscribe((err) => {
-      logger.info('presence subscribed')
+      // logger.info('presence subscribed')
     })
-
-    // Save doc version
-    if (!docVersions[doc.id]) {
-      docVersions[doc.id] = doc.version
-    }
   }
 
   // Set event stream headers
@@ -91,11 +97,13 @@ const openConnection = asyncHandler(async (req, res, next) => {
         version: doc.version,
       })} \n\n`
     )
+    // res.flush()
   })
 
-  const localPresence = doc.connection
-    .getDocPresence(process.env.CONNECTION_COLLECTION, docid)
-    .create(clientID)
+  // const localPresence = doc.connection
+  //   .getDocPresence(process.env.CONNECTION_COLLECTION, docid)
+  //   .create(clientID)
+  const localPresence = connection.getPresence(docid).create(clientID)
 
   // Store client info
   const clientObj = {
@@ -156,6 +164,8 @@ const updateDocument = (req, res, next) => {
   //     throw err
   //   }
 
+  // logger.info(req.body)
+  // logger.info(`client: ${version}, docVersions[doc.id]: ${docVersions[doc.id]}`)
   if (
     // version === lastSubmittedVersion /* && */
     version === docVersions[doc.id] /* doc.version */
@@ -204,10 +214,10 @@ const updateDocument = (req, res, next) => {
     //   `RETRY: client: ${version}, lastSubmittedVersion: ${lastSubmittedVersion}`
     // )
     // logger.info(`RETRY: client: ${version}, doc.version: ${doc.version}`)
-    logger.info(
-      `RETRY: client: ${version}, docVersions[doc.id]: ${docVersions[doc.id]}`
-    )
-    logger.info(op)
+    // logger.info(
+    //   `RETRY: client: ${version}, docVersions[doc.id]: ${docVersions[doc.id]}`
+    // )
+    // logger.info(op)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
   // })
@@ -233,24 +243,26 @@ const updatePresence = asyncHandler(async (req, res, next) => {
     next(new Error('client does not exist, unable to update presence'))
   }
 
-  logger.info(`updating presence for ${uid}`)
-  logger.info(`submitting presence: `)
-  logger.info(range)
+  // logger.info(`updating presence for ${uid}`)
+  // logger.info(`submitting presence: `)
+  // logger.info(range)
+
+  // const presence = doc.connection.getDocPresence(
+  //   process.env.CONNECTION_COLLECTION,
+  //   docid
+  // )
 
   client.localPresence.submit(range, (err) => {
     if (err) {
       throw err
     }
 
-    logger.info(`presence submitted with uid: ${uid} and range: `)
-    logger.info(range)
+    // logger.info(`presence submitted with uid: ${uid} and range: `)
+    // logger.info(range)
 
-    const presence = doc.connection.getDocPresence(
-      process.env.CONNECTION_COLLECTION,
-      docid
-    )
-
+    const presence = connection.getPresence(docid)
     const localPresences = presence.localPresences
+
     for (const [clientID, localPresence] of Object.entries(localPresences)) {
       const client = clients[clientID]
 
