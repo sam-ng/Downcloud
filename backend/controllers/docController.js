@@ -7,6 +7,7 @@ const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
+const connection = require('../config/connection')
 
 // Register rich text
 sharedb.types.register(richText.type)
@@ -51,6 +52,9 @@ const openConnection = asyncHandler(async (req, res, next) => {
   // Get doc instance
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
 
+  // Set event stream headers
+  res.set(headers)
+
   // Get inital doc data from server and listen for changes
   doc.subscribe((err) => {
     if (err) {
@@ -64,33 +68,29 @@ const openConnection = asyncHandler(async (req, res, next) => {
     // logger.info('subscribed to doc')
 
     // Create event stream and initial doc data
-    // logger.info('sending back inital content and version, logged below: ')
-    // logger.info(doc.data.ops)
-    // logger.info(doc.version)
-    res.set(headers).write(
+    logger.info('sending back inital content and version, logged below: ')
+    logger.info(doc.data.ops)
+    logger.info(doc.version)
+    res.write(
       `data: ${JSON.stringify({
         content: doc.data.ops,
         version: doc.version,
       })} \n\n`
     )
 
-    if (!docVersions[doc.id]) {
-      docVersions[doc.id] = doc.version
-    }
+    // if (!docVersions[doc.id]) {
+    //   docVersions[doc.id] = doc.version
+    // }
 
     // When we apply an op to the doc, update all other clients
-    doc.on('op', async (op, source) => {
+    doc.on('op', (op, source) => {
       // logger.info(`applying an op to a doc from source: ${source}`)
       // logger.info(`current doc.version: ${doc.version}`)
       // logger.info(`op being applied:`)
       // logger.info(op)
 
       if (clientID === source) {
-        // await sleep(25)
-        // // sender = source
-        // // if (sender) {
         // logger.info(`acking client ${clientID}`)
-        // // sender = null
         // res.write(
         //   `data: ${JSON.stringify({
         //     ack: op,
@@ -106,42 +106,42 @@ const openConnection = asyncHandler(async (req, res, next) => {
         }
       }
     })
-  })
 
-  // Get presence
-  const presence = doc.connection.getDocPresence(
-    process.env.CONNECTION_COLLECTION,
-    req.params.docid
-  )
-  presence.subscribe((err) => {
-    if (err) {
-      throw err
-    }
-  })
-  presence.on('receive', (id, range) => {
-    // logger.info(`presence on receive with id: ${id} and range: `)
-    // logger.info(range)
-    res.write(
-      `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
+    // Get presence
+    const presence = doc.connection.getDocPresence(
+      process.env.CONNECTION_COLLECTION,
+      req.params.docid
     )
-  })
-  const localPresence = presence.create(clientID)
+    presence.subscribe((err) => {
+      if (err) {
+        throw err
+      }
+    })
+    presence.on('receive', (id, range) => {
+      // logger.info(`presence on receive with id: ${id} and range: `)
+      // logger.info(range)
+      res.write(
+        `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
+      )
+    })
+    const localPresence = presence.create(clientID)
 
-  // Store client info
-  const clientObj = {
-    clientID,
-    res,
-    connection,
-    doc,
-    presence,
-    localPresence,
-  }
-  clients[clientID] = clientObj
+    // Store client info
+    const clientObj = {
+      clientID,
+      res,
+      connection,
+      doc,
+      presence,
+      localPresence,
+    }
+    clients[clientID] = clientObj
+  })
 
   // Client closed the connection
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
-    presence.destroy()
+    clients[clientID].presence.destroy()
     doc.destroy()
     res.socket.destroy()
     res.end()
@@ -186,42 +186,50 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   //     docVersions[doc.id]
   //   }; doc.version: ${doc.version}}`
   // )
-  if (version >= docVersions[doc.id]) {
-    // logger.info(`[CLIENT] doc version: ${version}`)
-    // logger.info('version === doc.version, submitting op, telling client ok')
-    docVersions[doc.id] = doc.version + 1
-    doc.submitOp(op, { source: clientID }, (err) => {
-      if (err) {
-        throw err
-      }
 
-      // reset docVersions to doc.version
-      docVersions[doc.id] = doc.version
+  // const connectionDoc = connection.get(process.env.CONNECTION_COLLECTION, docid)
 
+  doc.fetch((err) => {
+    if (err) throw err
+
+    if (version >= /* docVersions[doc.id] */ doc.version) {
+      // logger.info(`[CLIENT] doc version: ${version}`)
+      // logger.info('version === doc.version, submitting op, telling client ok')
+      // docVersions[doc.id] = doc.version + 1
+      doc.submitOp(op, { source: clientID }, (err) => {
+        if (err) {
+          throw err
+        }
+
+        // reset docVersions to doc.version
+        // docVersions[doc.id] = doc.version
+
+        // logger.info(
+        //   `[SERVER] doc version: ${docVersions[doc.id]}, doc version: ${
+        //     doc.version
+        //   }`
+        // )
+        logger.info(
+          `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
+        )
+        clients[clientID].res.write(
+          `data: ${JSON.stringify({
+            ack: op,
+          })} \n\n`
+        )
+        res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+      })
+    } else {
       // logger.info(
-      //   `[SERVER] doc version: ${docVersions[doc.id]}, doc version: ${
-      //     doc.version
-      //   }`
+      //   `RETRY: client: ${version}, server: ${
+      //     docVersions[doc.id]
+      //   }, doc.version: ${doc.version}`
       // )
-      // logger.info(
-      //   `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
-      // )
-      clients[clientID].res.write(
-        `data: ${JSON.stringify({
-          ack: op,
-        })} \n\n`
-      )
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-    })
-  } else {
-    logger.info(
-      `RETRY: client: ${version}, server: ${
-        docVersions[doc.id]
-      }, doc.version: ${doc.version}`
-    )
-    logger.info(op)
-    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
-  }
+      logger.info(`RETRY: client: ${version}, doc.version: ${doc.version}`)
+      logger.info(op)
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+    }
+  })
 })
 
 const updatePresence = async (req, res) => {
@@ -272,9 +280,6 @@ const getDoc = async (req, res) => {
   if (docid !== doc.id) {
     throw new Error('docid does not match doc.id of client')
   }
-  // else {
-  //   docVersions[doc.id] = doc.version
-  // }
 
   doc.fetch((err) => {
     if (err) {
