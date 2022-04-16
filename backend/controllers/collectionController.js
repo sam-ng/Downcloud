@@ -3,6 +3,7 @@ const connection = require('../config/connection')
 const DocumentMap = require('../models/documentMapModel')
 const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
+const { clients, docIDToDocs } = require('../server')
 
 // Fetches document mappings for queried documents
 const fetchDocumentMaps = async (docs) => {
@@ -17,18 +18,21 @@ const fetchDocumentMaps = async (docs) => {
 }
 
 // Creates a document
-const createDoc = asyncHandler(async (req, res) => {
+const createDoc = asyncHandler(async (req, res, next) => {
   // logger.info('creating a new doc')
   if (!req.body) {
     // logger.error('[createController]: name was not specified')
   }
   const docID = uuidv4()
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
+
+  // Create doc
   doc.fetch((err) => {
     if (err) {
       throw err
     }
 
+    // Set initial contents
     if (doc.type === null) {
       doc.create([], 'rich-text')
       DocumentMap.create({ docID, name: req.body.name })
