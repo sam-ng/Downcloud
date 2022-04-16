@@ -45,30 +45,13 @@ const openConnection = asyncHandler(async (req, res, next) => {
     // Set up event listeners
     doc.subscribe()
 
-    // When we apply an op to the doc, update all other clients
-    doc.on('op', (op, source) => {
-      // logger.info(`applying an op to a doc from source: ${source}`)
-      // logger.info(`current doc.version: ${doc.version}`)
-      // logger.info(`op being applied:`)
-      // logger.info(op)
-
-      // Loop all clients and ack ops for source and delta op for others
-      for (const [clientID, client] of Object.entries(clients)) {
-        if (source === clientID) {
-          client.res.write(
-            `data: ${JSON.stringify({
-              ack: op,
-            })} \n\n`
-          )
-        } else {
-          if (op.ops) {
-            client.res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
-          } else {
-            client.res.write(`data: ${JSON.stringify(op)} \n\n`)
-          }
-        }
-      }
-    })
+    // // When we apply an op to the doc, update all other clients
+    // doc.on('op', (op, source) => {
+    //   // logger.info(`applying an op to a doc from source: ${source}`)
+    //   // logger.info(`current doc.version: ${doc.version}`)
+    //   // logger.info(`op being applied:`)
+    //   // logger.info(op)
+    // })
 
     // Subscribe presence
     const presence = doc.connection.getDocPresence(
@@ -78,6 +61,11 @@ const openConnection = asyncHandler(async (req, res, next) => {
     presence.subscribe((err) => {
       logger.info('presence subscribed')
     })
+
+    // Save doc version
+    if (!docVersions[doc.id]) {
+      docVersions[doc.id] = doc.version
+    }
   }
 
   // Set event stream headers
@@ -103,10 +91,6 @@ const openConnection = asyncHandler(async (req, res, next) => {
         version: doc.version,
       })} \n\n`
     )
-
-    if (!docVersions[doc.id]) {
-      docVersions[doc.id] = doc.version
-    }
   })
 
   const localPresence = doc.connection
@@ -131,8 +115,8 @@ const openConnection = asyncHandler(async (req, res, next) => {
   })
 })
 
-let lastSubmittedVersion
-const updateDocument = asyncHandler(async (req, res, next) => {
+// let lastSubmittedVersion
+const updateDocument = (req, res, next) => {
   if (!req.body) {
     throw new Error('Missing body.')
   }
@@ -167,54 +151,67 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   //   }; doc.version: ${doc.version}}`
   // )
 
-  doc.fetch((err) => {
-    if (err) {
-      throw err
-    }
+  // doc.fetch((err) => {
+  //   if (err) {
+  //     throw err
+  //   }
 
-    if (
-      version !== lastSubmittedVersion &&
-      version >= docVersions[doc.id] /* doc.version */
-    ) {
-      // logger.info(`[CLIENT] doc version: ${version}`)
-      // logger.info('version === doc.version, submitting op, telling client ok')
-      docVersions[doc.id] = doc.version + 1
-      lastSubmittedVersion = version
-      doc.submitOp(op, { source: clientID }, (err) => {
-        if (err) {
-          throw err
+  if (
+    // version === lastSubmittedVersion /* && */
+    version === docVersions[doc.id] /* doc.version */
+    // version === doc.version
+  ) {
+    // logger.info(`[CLIENT] doc version: ${version}`)
+    // logger.info('version === doc.version, submitting op, telling client ok')
+    // docVersions[doc.id] = doc.version + 1
+    // lastSubmittedVersion = version
+    docVersions[doc.id] += 1
+    doc.submitOp(op, { source: clientID }, (err) => {
+      if (err) {
+        throw err
+      }
+
+      // reset docVersions to doc.version
+      docVersions[doc.id] = doc.version
+
+      // Loop all clients and ack ops for source and delta op for others
+      const source = clientID
+      for (const [clientID, client] of Object.entries(clients)) {
+        if (source === clientID) {
+          client.res.write(
+            `data: ${JSON.stringify({
+              ack: op,
+            })} \n\n`
+          )
+        } else {
+          if (op.ops) {
+            client.res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
+          } else {
+            client.res.write(`data: ${JSON.stringify(op)} \n\n`)
+          }
         }
+      }
 
-        // reset docVersions to doc.version
-        docVersions[doc.id] = doc.version
-
-        // logger.info(
-        //   `[SERVER] doc version: ${docVersions[doc.id]}, doc version: ${
-        //     doc.version
-        //   }`
-        // )
-        // logger.info(
-        //   `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
-        // )
-        // client.res.write(
-        //   `data: ${JSON.stringify({
-        //     ack: op,
-        //   })} \n\n`
-        // )
-        res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
-      })
-    } else {
-      // logger.info(
-      //   `RETRY: client: ${version}, server: ${
-      //     docVersions[doc.id]
-      //   }, doc.version: ${doc.version}`
-      // )
-      logger.info(`RETRY: client: ${version}, doc.version: ${doc.version}`)
-      logger.info(op)
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
-    }
-  })
-})
+      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
+    })
+  } else {
+    // logger.info(
+    //   `RETRY: client: ${version}, server: ${
+    //     docVersions[doc.id]
+    //   }, doc.version: ${doc.version}`
+    // )
+    // logger.info(
+    //   `RETRY: client: ${version}, lastSubmittedVersion: ${lastSubmittedVersion}`
+    // )
+    // logger.info(`RETRY: client: ${version}, doc.version: ${doc.version}`)
+    logger.info(
+      `RETRY: client: ${version}, docVersions[doc.id]: ${docVersions[doc.id]}`
+    )
+    logger.info(op)
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
+  }
+  // })
+}
 
 const updatePresence = asyncHandler(async (req, res, next) => {
   if (!req.body) {
@@ -256,6 +253,12 @@ const updatePresence = asyncHandler(async (req, res, next) => {
     const localPresences = presence.localPresences
     for (const [clientID, localPresence] of Object.entries(localPresences)) {
       const client = clients[clientID]
+
+      // FIXME: might be wrong, include all clients
+      // Skip adding presence for this client
+      if (clientID === uid) {
+        continue
+      }
 
       if (!client) {
         next(

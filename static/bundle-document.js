@@ -17804,7 +17804,7 @@ quill.on('selection-change', (range, oldRange, source) => {
 // Update quill when message is received from server event stream
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data)
-  console.log(data)
+  // console.log(data)
   if (data.presence) {
     // Presence data
     const { id, cursor } = data.presence
