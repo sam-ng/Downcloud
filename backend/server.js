@@ -9,8 +9,6 @@ const connectDatabase = require('./config/db')
 const { logger } = require('./config/logger')
 const { errorHandler } = require('./middleware/errorMiddleware')
 const { protect } = require('./middleware/authMiddleware')
-// const userController = require('./controllers/userController')
-// const listController = require('./controllers/listController')
 const { renderHome } = require('./controllers/collectionController')
 const port = process.env.SERVER_PORT || 8000
 
@@ -20,18 +18,15 @@ const clients = {}
 // Dictionary of client versions
 const docVersions = {}
 
-// Dictionary mapping docids to names
-const docIDNamePairs = {}
-
 // Dictionary of docids to docs
 const docIDToDocs = {}
 
-module.exports = { clients, docIDNamePairs, docVersions, docIDToDocs }
+module.exports = { clients, docVersions, docIDToDocs }
 
 connectDatabase()
 const app = express()
 
-// TODO: switch to React.js
+// Render pages using ejs
 app.set('view engine', 'ejs')
 
 /*/////////////
@@ -79,5 +74,5 @@ app.get('/', renderHome)
 app.use(errorHandler)
 
 app.listen(port, () => {
-  // logger.info(`Server started on port: ${port}`)
+  logger.info(`Server started on port: ${port}`)
 })

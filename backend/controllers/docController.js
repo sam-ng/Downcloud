@@ -21,11 +21,17 @@ const headers = {
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
 }
 
+// @desc    Render doc
+// @route   GET /doc/edit/:docid
+// @access  Private
 const getDocUI = asyncHandler(async (req, res) => {
   // logger.info(`getting doc ui`)
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
 })
 
+// @desc    Open a connection
+// @route   GET /doc/connect/:docid/:uid
+// @access  Private
 const openConnection = asyncHandler(async (req, res, next) => {
   if (!req.params) {
     throw new Error('No connection ID or document ID or presenceID specified.')
@@ -124,6 +130,9 @@ const openConnection = asyncHandler(async (req, res, next) => {
 })
 
 // let lastSubmittedVersion
+// @desc    Update a document/Submit an op to a document
+// @route   POST /doc/op/:docid/:uid
+// @access  Private
 const updateDocument = (req, res, next) => {
   if (!req.body) {
     throw new Error('Missing body.')
@@ -223,6 +232,9 @@ const updateDocument = (req, res, next) => {
   // })
 }
 
+// @desc    Update presence
+// @route   POST /doc/presence/:docid/:uid
+// @access  Private
 const updatePresence = asyncHandler(async (req, res, next) => {
   if (!req.body) {
     throw new Error('Missing body.')
@@ -289,6 +301,9 @@ const updatePresence = asyncHandler(async (req, res, next) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
+// @desc    Get doc HTML
+// @route   GET /doc/get/:docid/:uid
+// @access  Private
 const getDoc = async (req, res) => {
   if (!req.params) {
     throw new Error('No connection id specified.')

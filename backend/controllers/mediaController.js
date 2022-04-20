@@ -47,6 +47,9 @@ const uploadWrapper = asyncHandler(async (req, res, next) => {
   )
 })
 
+// @desc    Upload image
+// @route   POST /media/upload
+// @access  Private
 const uploadImage = asyncHandler(async (req, res) => {
   const fileName = req.file.filename.split('.')[0]
   const fileExtension = req.file.filename.split('.')[1]
@@ -59,12 +62,15 @@ const uploadImage = asyncHandler(async (req, res) => {
   })
 })
 
+// @desc    Get image
+// @route   GET /media/access/:mediaid
+// @access  Private
 const getImage = asyncHandler(async (req, res) => {
-  const { mediaID } = req.params
+  const { mediaid } = req.params
 
-  // logger.info(`getImage: ${mediaID}`)
+  // logger.info(`getImage: ${mediaid}`)
 
-  res.sendFile(path.join(__dirname, '../../', `/images/${mediaID}`))
+  res.sendFile(path.join(__dirname, '../../', `/images/${mediaid}`))
 })
 
 module.exports = {

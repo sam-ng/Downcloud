@@ -12,6 +12,9 @@ const transporter = nodemailer.createTransport({
   tls: { rejectUnauthorized: false },
 })
 
+// @desc    Register user
+// @route   POST /users/signup
+// @access  Public
 const addUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body
 
@@ -59,6 +62,9 @@ const addUser = asyncHandler(async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
+// @desc    Login user
+// @route   POST /users/login
+// @access  Public
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
@@ -94,6 +100,9 @@ const loginUser = asyncHandler(async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ name: user.name })
 })
 
+// @desc    Logout user
+// @route   POST /users/logout
+// @access  Public
 const logoutUser = asyncHandler(async (req, res) => {
   req.session.destroy((err) => {
     if (err) throw err
@@ -104,6 +113,9 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
+// @desc    Verify user
+// @route   GET /users/verify
+// @access  Public
 const verifyUser = asyncHandler(async (req, res) => {
   let { email, key } = req.query
   // logger.info(`req.query: ${JSON.stringify(req.query)}`)

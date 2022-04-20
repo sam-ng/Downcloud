@@ -8,7 +8,7 @@ const {
 } = require('../controllers/mediaController')
 
 router.post('/upload', uploadWrapper, uploadImage)
-router.get('/access/:mediaID', getImage)
+router.get('/access/:mediaid', getImage)
 
 // Frontend page to upload
 router.get('/upload', (req, res) => {
