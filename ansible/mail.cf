@@ -24,8 +24,8 @@ compatibility_level = 2
 
 
 # TLS parameters
-smtpd_tls_cert_file=/etc/letsencrypt/live/your_domain/fullchain.pem
-smtpd_tls_key_file=/etc/letsencrypt/live/your_domain/privkey.pem
+smtpd_tls_cert_file=/etc/letsencrypt/live/downcloud.cse356.compas.cs.stonybrook.edu/fullchain.pem
+smtpd_tls_key_file=/etc/letsencrypt/live/downcloud.cse356.compas.cs.stonybrook.edu/privkey.pem
 smtpd_tls_security_level=may
 
 smtp_tls_CApath=/etc/ssl/certs
