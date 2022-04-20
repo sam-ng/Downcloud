@@ -129,6 +129,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
       `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
     )
   })
+
   const localPresence = presence.create(clientID)
 
   // Store client info
@@ -146,14 +147,13 @@ const openConnection = asyncHandler(async (req, res, next) => {
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
     presence.destroy()
-    doc.destroy()
+    doc.destroy() // TODO: check if this is valid
     res.socket.destroy()
     res.end()
     // delete clients[clientID]
   })
 })
 
-// let lastSubmittedVersion
 // @desc    Update a document/Submit an op to a document
 // @route   POST /doc/op/:docid/:uid
 // @access  Private
@@ -183,32 +183,11 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   }
 
   // logger.info(`client ${uid} attempting to update document ${docid}`)
-  // logger.info(`op client sent: `)
   // logger.info(op)
   // logger.info(`version client sent:   ${version}`)
-  // logger.info(`doc.version:           ${doc.version}`)
+  // logger.info(`docVersions[doc.id]:   ${docVersions[doc.id]}`)
 
-  // doc.submitOp(op, { source: clientID })
-
-  // logger.info(
-  //   `client version: ${version}; server version: ${
-  //     docVersions[doc.id]
-  //   }; doc.version: ${doc.version}}`
-  // )
-
-  // const connectionDoc = connection.get(process.env.CONNECTION_COLLECTION, docid)
-
-  // doc.fetch((err) => {
-  //   if (err) throw err
-
-  if (
-    // version !== lastSubmittedVersion &&
-    version === docVersions[doc.id] /* doc.version */
-  ) {
-    // logger.info(`[CLIENT] doc version: ${version}`)
-    // logger.info('version === doc.version, submitting op, telling client ok')
-    // docVersions[doc.id] = doc.version + 1
-    // lastSubmittedVersion = version
+  if (version === docVersions[doc.id]) {
     docVersions[doc.id] += 1
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
@@ -218,15 +197,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       // reset docVersions to doc.version
       docVersions[doc.id] = doc.version
 
-      // logger.info(
-      //   `[SERVER] doc version: ${docVersions[doc.id]}, doc version: ${
-      //     doc.version
-      //   }`
-      // )
-      // logger.info(
-      //   `op has been submitted to the server and version has been incremented. doc.version: ${doc.version} `
-      // )
-      clients[clientID].res.write(
+      client.res.write(
         `data: ${JSON.stringify({
           ack: op,
         })} \n\n`
@@ -234,22 +205,16 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
     })
   } else {
-    // logger.info(
-    //   `RETRY: client: ${version}, server: ${
-    //     docVersions[doc.id]
-    //   }, doc.version: ${doc.version}`
-    // )
-    logger.info(`RETRY: client: ${version}, doc.version: ${doc.version}`)
-    logger.info(op)
+    // logger.info(`RETRY: client: ${version}, server: ${docVersions[doc.id]}`)
+    // logger.info(op)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
-  // })
 })
 
 // @desc    Update presence
 // @route   POST /doc/presence/:docid/:uid
 // @access  Private
-const updatePresence = async (req, res) => {
+const updatePresence = asyncHandler(async (req, res) => {
   if (!req.body) {
     throw new Error('Missing body.')
   }
@@ -278,12 +243,12 @@ const updatePresence = async (req, res) => {
   })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
-}
+})
 
 // @desc    Get doc HTML
 // @route   GET /doc/get/:docid/:uid
 // @access  Private
-const getDoc = async (req, res) => {
+const getDoc = asyncHandler(async (req, res) => {
   if (!req.params) {
     throw new Error('No connection id specified.')
   }
@@ -317,7 +282,7 @@ const getDoc = async (req, res) => {
     // logger.info(html)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').send(html)
   })
-}
+})
 
 module.exports = {
   getDocUI,

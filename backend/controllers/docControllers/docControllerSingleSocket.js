@@ -60,23 +60,8 @@ const openConnection = asyncHandler(async (req, res, next) => {
       }
     })
 
-    // // When we apply an op to the doc, update all other clients
-    // doc.on('op', (op, source) => {
-    //   // logger.info(`applying an op to a doc from source: ${source}`)
-    //   // logger.info(`current doc.version: ${doc.version}`)
-    //   // logger.info(`op being applied:`)
-    //   // logger.info(op)
-    // })
-
-    // Subscribe presence
-    // const presence = doc.connection.getDocPresence(
-    //   process.env.CONNECTION_COLLECTION,
-    //   docid
-    // )
-    const presence = connection.getPresence(docid)
-    presence.subscribe((err) => {
-      // logger.info('presence subscribed')
-    })
+    // Subscribe presence once
+    connection.getPresence(docid).subscribe()
   }
 
   // Set event stream headers
@@ -102,12 +87,8 @@ const openConnection = asyncHandler(async (req, res, next) => {
         version: doc.version,
       })} \n\n`
     )
-    // res.flush()
   })
 
-  // const localPresence = doc.connection
-  //   .getDocPresence(process.env.CONNECTION_COLLECTION, docid)
-  //   .create(clientID)
   const localPresence = connection.getPresence(docid).create(clientID)
 
   // Store client info
@@ -128,7 +109,6 @@ const openConnection = asyncHandler(async (req, res, next) => {
   })
 })
 
-// let lastSubmittedVersion
 // @desc    Update a document/Submit an op to a document
 // @route   POST /doc/op/:docid/:uid
 // @access  Private
@@ -157,32 +137,9 @@ const updateDocument = (req, res, next) => {
   // logger.info(`op client sent: `)
   // logger.info(op)
   // logger.info(`version client sent:   ${version}`)
-  // logger.info(`doc.version:           ${doc.version}`)
+  // logger.info(`docVersions[doc.id]:   ${docVersions[doc.id]}`)
 
-  // doc.submitOp(op, { source: clientID })
-
-  // logger.info(
-  //   `client version: ${version}; server version: ${
-  //     docVersions[doc.id]
-  //   }; doc.version: ${doc.version}}`
-  // )
-
-  // doc.fetch((err) => {
-  //   if (err) {
-  //     throw err
-  //   }
-
-  // logger.info(req.body)
-  // logger.info(`client: ${version}, docVersions[doc.id]: ${docVersions[doc.id]}`)
-  if (
-    // version === lastSubmittedVersion /* && */
-    version === docVersions[doc.id] /* doc.version */
-    // version === doc.version
-  ) {
-    // logger.info(`[CLIENT] doc version: ${version}`)
-    // logger.info('version === doc.version, submitting op, telling client ok')
-    // docVersions[doc.id] = doc.version + 1
-    // lastSubmittedVersion = version
+  if (version === docVersions[doc.id]) {
     docVersions[doc.id] += 1
     doc.submitOp(op, { source: clientID }, (err) => {
       if (err) {
@@ -213,22 +170,10 @@ const updateDocument = (req, res, next) => {
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
     })
   } else {
-    // logger.info(
-    //   `RETRY: client: ${version}, server: ${
-    //     docVersions[doc.id]
-    //   }, doc.version: ${doc.version}`
-    // )
-    // logger.info(
-    //   `RETRY: client: ${version}, lastSubmittedVersion: ${lastSubmittedVersion}`
-    // )
-    // logger.info(`RETRY: client: ${version}, doc.version: ${doc.version}`)
-    // logger.info(
-    //   `RETRY: client: ${version}, docVersions[doc.id]: ${docVersions[doc.id]}`
-    // )
+    // logger.info(`RETRY: client: ${version}, server: ${docVersions[doc.id]}`)
     // logger.info(op)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
-  // })
 }
 
 // @desc    Update presence
