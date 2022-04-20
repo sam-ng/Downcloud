@@ -119,7 +119,13 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
   // Subscribe to presence updates
   // TODO: check if subscribing multiple times to a document causes an issue.
-  presence.subscribe()
+  presence.subscribe((err) => {
+    if (err) {
+      throw err
+    }
+
+    logger.info('presence subscribed')
+  })
 
   // An update from a remote presence client has been received
   presence.on('receive', (id, range) => {
@@ -131,6 +137,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
   })
 
   const localPresence = presence.create(clientID)
+  console.log('presence: ', presence)
 
   // Store client info
   const clientObj = {
@@ -147,7 +154,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
     presence.destroy()
-    doc.destroy() // TODO: check if this is valid
+    doc.destroy()
     res.socket.destroy()
     res.end()
     // delete clients[clientID]
