@@ -111,8 +111,7 @@
     - name: Install mongodb
       block:
         - name: Import the public key
-          apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=7F0CEB10
-          state: present
+          apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=7F0CEB10 state=present
 
         - name: Add MongoDB repository
           apt_repository:
