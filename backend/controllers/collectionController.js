@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
 const { clients, docIDToDocs } = require('../server')
 
+// TODO: optimize query if possible
 // Fetches document mappings for queried documents
 const fetchDocumentMaps = async (docs) => {
   let docIDNamePairs = {}
@@ -17,7 +18,9 @@ const fetchDocumentMaps = async (docs) => {
   return docIDNamePairs
 }
 
-// Creates a document
+// @desc    Create a document
+// @route   POST /collection/create
+// @access  Private
 const createDoc = asyncHandler(async (req, res, next) => {
   // logger.info('creating a new doc')
   if (!req.body) {
@@ -50,7 +53,9 @@ const createDoc = asyncHandler(async (req, res, next) => {
   })
 })
 
-// Deletes a document
+// @desc    Delete a document
+// @route   POST /collection/delete
+// @access  Private
 const deleteDoc = asyncHandler(async (req, res, next) => {
   if (!req.body) {
     // logger.error('[deleteController]: doc ID was not specified')
@@ -75,7 +80,9 @@ const deleteDoc = asyncHandler(async (req, res, next) => {
   })
 })
 
-// Lists top 10 most recently modified documents
+// @desc    Get a list of top 10 most recently modifed documents
+// @route   GET /collection/list
+// @access  Private
 const getList = asyncHandler(async (req, res) => {
   const query = connection.createFetchQuery(process.env.CONNECTION_COLLECTION, {
     $sort: { '_m.mtime': -1 },
