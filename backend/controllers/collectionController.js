@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
 const { clients, docIDToDocs } = require('../server')
 
+// TODO: optimize query if possible
 // Fetches document mappings for queried documents
 const fetchDocumentMaps = async (docs) => {
   let docIDNamePairs = {}

@@ -29,10 +29,6 @@ const app = express()
 // Render pages using ejs
 app.set('view engine', 'ejs')
 
-/*/////////////
- MIDDLEWARE
-/////////////*/
-
 // Sessions
 app.use(
   session({

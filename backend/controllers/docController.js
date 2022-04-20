@@ -25,7 +25,6 @@ const headers = {
 // @route   GET /doc/edit/:docid
 // @access  Private
 const getDocUI = asyncHandler(async (req, res) => {
-  // logger.info(`getting doc ui`)
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/document')
 })
 
