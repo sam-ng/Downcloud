@@ -110,19 +110,14 @@
     #         pm2 start "npm run server" --name {{ project_server }}
     - name: Install mongodb
       block:
-        - name: Import the public key
+        - name: Import the public key used by the package management system
           apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=7F0CEB10 state=present
 
         - name: Add MongoDB repository
-          apt_repository:
-            repo: 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen'
-            state: present
+          apt_repository: repo='deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' state=present
 
-        - name: Install mongodb
-          apt:
-            name: mongodb-org
-            state: latest
-            update_cache: yes
+        - name: install mongodb
+          apt: pkg=mongodb-org state=latest update_cache=yes
 
         - name: Start mongodb
           service:
