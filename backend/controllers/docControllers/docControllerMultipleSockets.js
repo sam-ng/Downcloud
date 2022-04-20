@@ -137,7 +137,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
   })
 
   const localPresence = presence.create(clientID)
-  console.log('presence: ', presence)
+  // console.log('presence: ', presence)
 
   // Store client info
   const clientObj = {
@@ -239,6 +239,8 @@ const updatePresence = asyncHandler(async (req, res) => {
   // logger.info(`updating presence for ${uid}`)
   // logger.info(`presence to submit: `)
   // logger.info(range)
+
+  // console.log(client.presence)
 
   client.localPresence.submit(range, (err) => {
     if (err) {

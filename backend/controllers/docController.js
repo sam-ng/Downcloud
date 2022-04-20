@@ -137,7 +137,6 @@ const openConnection = asyncHandler(async (req, res, next) => {
   })
 
   const localPresence = presence.create(clientID)
-  console.log('presence: ', presence)
 
   // Store client info
   const clientObj = {
