@@ -108,33 +108,6 @@
     #       shell: |
     #         cd /var/www/{{ site }}
     #         pm2 start "npm run server" --name {{ project_server }}
-    - name: Install mongodb
-      block:
-        - name: Import the public key
-          apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=7F0CEB10
-          state: present
-
-        - name: Add MongoDB repository
-          apt_repository:
-            repo: 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen'
-            state: present
-
-        - name: Install mongodb
-          apt:
-            name: mongodb-org
-            state: latest
-            update_cache: yes
-
-        - name: Start mongodb
-          service:
-            name: mongodb
-            state: started
-
-    # - name: Install mongosh
-    #   command: apt-get install -y mongodb-mongosh
-
-    # TODO:
-    # - name: Install postfix
 
     - name: Configure nginx
       block:
