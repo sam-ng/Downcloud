@@ -6,7 +6,7 @@
   vars:
     site: downcloud.cse356.compas.cs.stonybrook.edu
     nginx_config: '{{ site }}'
-    repo_name: cse356-ms2
+    repo_name: cse356-ms3
     app_repo: git@github.com:Zharnite/{{ repo_name }}.git
     nodejs_version: '16'
     project_server: project-server
