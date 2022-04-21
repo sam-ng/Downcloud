@@ -66,14 +66,13 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
     if (doc.type === null) {
       next(new Error('doc does not exist'))
+      return
     }
 
     // logger.info('subscribed to doc')
 
     // Create event stream and initial doc data
-    logger.info('sending back inital content and version, logged below: ')
-    logger.info(doc.data.ops)
-    logger.info(doc.version)
+    logger.info(`sending back version ${doc.version} content: ${JSON.stringify(doc.data.ops)}`)
     res.write(
       `data: ${JSON.stringify({
         content: doc.data.ops,
@@ -89,10 +88,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
   // When we apply an op to the doc, update all other clients
   doc.on('op', (op, source) => {
-    // logger.info(`applying an op to a doc from source: ${source}`)
-    // logger.info(`current doc.version: ${doc.version}`)
-    // logger.info(`op being applied:`)
-    // logger.info(op)
+    logger.info(`${clientID} applying op from ${source}: ${JSON.stringify(op)}`)
 
     if (clientID === source) {
       // logger.info(`acking client ${clientID}`)
@@ -129,8 +125,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
   // An update from a remote presence client has been received
   presence.on('receive', (id, range) => {
-    // logger.info(`presence on receive with id: ${id} and range: `)
-    // logger.info(range)
+    // logger.info(`presence received from ${id}: ${JSON.stringify(range)}`)
     res.write(
       `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
     )
