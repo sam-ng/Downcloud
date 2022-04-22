@@ -58,6 +58,7 @@ app.use('/users', require('./routes/userRoutes'))
 app.use('/collection', protect, require('./routes/collectionRoutes'))
 app.use('/doc', protect, require('./routes/docRoutes'))
 app.use('/media', protect, require('./routes/mediaRoutes'))
+app.use('/index', protect, require('./routes/indexRoutes'))
 
 // Frontend Home + Sign up
 app.get('/home', renderHome)
