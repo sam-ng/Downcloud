@@ -31,11 +31,31 @@
           </button>
         </form>
       </div>
-      <a
-        id="create-btn"
-        class="create-btn btn-floating btn-large waves-effect waves-light blue right"
-        ><i class="material-icons">add</i></a
+      <form
+        class="h-stack"
+        action="/collection/create"
+        method="post"
+        id="create-doc-form"
       >
+        <div class="input-field">
+          <label for="name">Name:</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="create-text-input"
+          /><br /><br />
+        </div>
+        <button
+          id="create-btn"
+          class="create-btn btn-floating btn-large waves-effect waves-light blue right"
+          type="submit"
+          form="create-doc-form"
+          value="Submit"
+        >
+          <i class="material-icons">add</i>
+        </button>
+      </form>
       <ul id="doc-id-list" class="collection">
         <% docIDNameList.forEach((docIDName) => { %>
         <a
