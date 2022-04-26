@@ -11,3 +11,7 @@
 strong {
   font-weight: bold !important;
 }
+
+.create-text-input {
+  width: 500px !important;
+}
