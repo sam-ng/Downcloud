@@ -8,7 +8,7 @@ const errorHandler = (err, req, res, next) => {
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').status(200).json({
     error: true,
     message: err.message,
-    // stack: err.stack,
+    stack: err.stack,
   })
 }
 

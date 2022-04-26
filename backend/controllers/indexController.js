@@ -5,12 +5,6 @@ const esClient = require('../config/elastic')
 // Elastic variables
 const INDEX = 'downcloud'
 const CUSTOM_ANALYZER_NAME = 'custom_analyzer'
-const CUSTOM_ANALYZER = {
-  type: 'custom',
-  tokenizer: 'standard',
-  char_filter: ['html_strip'],
-  filter: ['lowercase', 'asciifolding', 'stop', 'porter_stem'],
-}
 
 // @desc    Get search results
 // @route   GET /index/search
@@ -19,22 +13,25 @@ const getSearchResults = asyncHandler(async (req, res) => {
   const searchText = req.query.q
   updatedSearchText = searchText.trim()
 
-  const response = await esClient.search({
-    index: INDEX,
-    body: {
-      query: updatedSearchText,
-      result_fields: {
-        title: {
-          raw: {},
-        },
-        content: {
-          snippet: {
-            size: 100,
-          },
-        },
-      },
-    },
-  })
+  // TODO:
+  // const response = await esClient.search({
+  //   index: INDEX,
+  //   body: {
+  //     query: {
+  //       multi_match: {
+  //         query: updatedSearchText,
+  //         fields: ['title', 'content'],
+  //       },
+  //     },
+  //     highlight: {
+  //       number_of_fragments: 1,
+  //       fragment_size: 100,
+  //       fields: {
+  //         content: {},
+  //       },
+  //     },
+  //   },
+  // })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json(response)
 })
@@ -56,27 +53,65 @@ const createIndex = asyncHandler(async (req, res) => {
     index = INDEX
   }
 
-  const response = esClient.indices.create({
+  const response = await esClient.indices.create({
     index,
     settings: {
       analysis: {
+        // filter: {
+        //   autocomplete_filter: {
+        //     type: 'edge_ngram',
+        //     min_gram: 1,
+        //     max_gram: 20,
+        //   },
+        // },
         analyzer: {
-          custom_analyzer: CUSTOM_ANALYZER,
+          custom_analyzer: {
+            type: 'custom',
+            tokenizer: 'standard',
+            char_filter: ['html_strip'],
+            filter: ['lowercase', 'asciifolding', 'stop', 'porter_stem'],
+          },
+          // autocomplete_analyzer: {
+          //   type: 'custom',
+          //   tokenizer: 'standard',
+          //   char_filter: ['html_strip'],
+          //   filter: [
+          //     'lowercase',
+          //     'asciifolding',
+          //     'stop',
+          //     'porter_stem',
+          //     'autocomplete_filter',
+          //   ],
+          // },
         },
       },
     },
     mappings: {
+      // _source: {
+      //   enabled: false,
+      // },
       properties: {
-        title: { type: 'text', analyzer: CUSTOM_ANALYZER_NAME },
-        content: { type: 'text', analyzer: CUSTOM_ANALYZER_NAME },
-        // suggest: {
-        //   type: 'completion',
-        // },
+        title: {
+          type: 'text',
+          analyzer: CUSTOM_ANALYZER_NAME,
+          // search_analyzer: CUSTOM_ANALYZER_NAME,
+          // analyzer: 'autocomplete_analyzer',
+        },
+        content: {
+          type: 'text',
+          analyzer: CUSTOM_ANALYZER_NAME,
+          // search_analyzer: CUSTOM_ANALYZER_NAME,
+          // analyzer: 'autocomplete_analyzer',
+        },
+        suggest: {
+          type: 'completion',
+          analyzer: CUSTOM_ANALYZER_NAME,
+        },
       },
     },
   })
 
-  res.json(`Created: ${response}`)
+  res.json(response)
 })
 
 // @desc    Clear index
@@ -88,11 +123,11 @@ const clearIndex = asyncHandler(async (req, res) => {
     index = INDEX
   }
 
-  const response = await client.indices.delete({
+  const response = await esClient.indices.delete({
     index,
   })
 
-  res.json(`Cleared: ${response}`)
+  res.json(response)
 })
 
 // @desc    Add to index
@@ -108,15 +143,21 @@ const addToIndex = asyncHandler(async (req, res) => {
     throw new Error('Please enter title and content')
   }
 
-  const response = await client.index({
+  const titleSuggestions = getSuggestorContent(title)
+  const contentSuggestions = getSuggestorContent(content)
+  const suggestions = titleSuggestions.concat(contentSuggestions)
+
+  const response = await esClient.index({
     index,
     body: {
       title,
       content,
+      // TODO: improve/optimize
+      suggest: suggestions,
     },
   })
 
-  res.json(`Added: ${response}`)
+  res.json(response)
 })
 
 // @desc    Get everything index
@@ -128,7 +169,7 @@ const getIndex = asyncHandler(async (req, res) => {
     index = INDEX
   }
 
-  const response = await client.search({
+  const response = await esClient.search({
     index,
     body: {
       query: {
@@ -137,26 +178,117 @@ const getIndex = asyncHandler(async (req, res) => {
     },
   })
 
-  res.json(`Get all: ${response}`)
+  res.json(response)
 })
 
 // @desc    Return tokens from custom_analyzer
 // @route   POST /index/analyze
 // @access  Private
 const analyzeText = asyncHandler(async (req, res) => {
-  let { text } = req.body
+  let { index, text } = req.body
+  if (!index) {
+    index = INDEX
+  }
 
   if (!text) {
     throw new Error('Please enter some text')
   }
 
-  const response = await client.indices.analyze({
+  const response = await esClient.indices.analyze({
+    index,
     analyzer: CUSTOM_ANALYZER_NAME,
+    // analyzer: 'autocomplete_analyzer',
     text,
   })
 
-  res.json(`Analyzed: ${response}`)
+  res.json(response)
 })
+
+// @desc    Get search results from other index
+// @route   POST /index/search2
+// @access  Private
+const getSearchResults2 = asyncHandler(async (req, res) => {
+  const { index, text } = req.body
+  let searchText = text.trim()
+
+  const response = await esClient.search({
+    index,
+    body: {
+      query: {
+        multi_match: {
+          query: searchText,
+          fields: ['title', 'content'],
+        },
+      },
+      highlight: {
+        number_of_fragments: 1,
+        fragment_size: 100,
+        fields: {
+          content: {},
+        },
+      },
+    },
+  })
+
+  res.json(response)
+})
+
+// @desc    Suggest word
+// @route   POST /index/suggest2
+// @access  Private
+const getSuggestion2 = asyncHandler(async (req, res) => {
+  const { index, text } = req.body
+  let searchText = text.trim()
+
+  // const response = await esClient.search({
+  //   index,
+  //   body: {
+  //     size: 3,
+  //     query: {
+  //       multi_match: {
+  //         query: searchText,
+  //         fields: [
+  //           'title',
+  //           'title._2gram',
+  //           'title._3gram',
+  //           'content',
+  //           'content._2gram',
+  //           'content._3gram',
+  //         ],
+  //       },
+  //     },
+  //   },
+  // })
+
+  const response = await esClient.search({
+    index,
+    body: {
+      suggest: {
+        autocomplete_suggest: {
+          prefix: searchText,
+          completion: {
+            field: 'suggest',
+          },
+        },
+      },
+    },
+  })
+
+  res.json(response)
+})
+
+const getSuggestorContent = (text) => {
+  let updatedText = text.trim() // trim whitespace
+  let suggestContent = updatedText.split(/\W+/) // split on non-word characters
+  // TODO: stop words
+  // TODO: stem words
+  // TODO: remove random characters, punctuation, everything an analyzer does
+  // TODO: optimize
+
+  return [...new Set(suggestContent)]
+}
+
+// TODO: update document in index
 
 module.exports = {
   getSearchResults,
@@ -166,4 +298,6 @@ module.exports = {
   createIndex,
   getIndex,
   analyzeText,
+  getSearchResults2,
+  getSuggestion2,
 }
