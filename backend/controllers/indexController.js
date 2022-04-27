@@ -35,7 +35,7 @@ const getSearchResults = asyncHandler(async (req, res) => {
 
   const results = response.hits.hits.map((hit) => {
     return {
-      docid: hit._source.docid,
+      docid: hit._source.id,
       name: hit._source.title,
       snippet: hit.highlight.content[0],
     }
@@ -111,7 +111,7 @@ const createIndex = asyncHandler(async (req, res) => {
           // search_analyzer: CUSTOM_ANALYZER_NAME,
           // analyzer: 'autocomplete_analyzer',
         },
-        docid: {
+        id: {
           type: 'keyword',
         },
         suggest: {
@@ -145,7 +145,7 @@ const clearIndex = asyncHandler(async (req, res) => {
 // @route   POST /index/add
 // @access  Private
 const addToIndex = asyncHandler(async (req, res) => {
-  let { index, title, content, docid } = req.body
+  let { index, title, content, id } = req.body
   if (!index) {
     index = INDEX
   }
@@ -160,10 +160,10 @@ const addToIndex = asyncHandler(async (req, res) => {
 
   const response = await esClient.index({
     index,
+    id,
     body: {
       title,
       content,
-      docid,
       // TODO: improve/optimize
       suggest: suggestions,
     },
@@ -273,18 +273,63 @@ const getSuggestion2 = asyncHandler(async (req, res) => {
   //   },
   // })
 
+  // TODO: sort by frequency, score
+
   const response = await esClient.search({
     index,
     body: {
       suggest: {
         autocomplete_suggest: {
           prefix: searchText,
+          // regex: searchText + '.+',
           completion: {
             field: 'suggest',
+            size: 10,
+            skip_duplicates: true,
           },
         },
       },
     },
+  })
+
+  res.json(response)
+})
+
+const updateDocInIndex = asyncHandler(async (req, res) => {
+  let { index, text, id } = req.body
+  if (!index) {
+    index = INDEX
+  }
+
+  // TODO: add title to updated suggestions
+  // const titleSuggestions = getSuggestorContent(title)
+  // const contentSuggestions = getSuggestorContent(content)
+  // const suggestions = titleSuggestions.concat(contentSuggestions)
+  const suggestions = getSuggestorContent(text)
+
+  const response = await esClient.update({
+    index,
+    id,
+    body: {
+      doc: {
+        content: text,
+        suggest: suggestions,
+      },
+    },
+  })
+
+  res.json(response)
+})
+
+const getDocInIndex = asyncHandler(async (req, res) => {
+  let { index, id } = req.body
+  if (!index) {
+    index = INDEX
+  }
+
+  const response = await esClient.get({
+    index,
+    id,
   })
 
   res.json(response)
@@ -301,21 +346,16 @@ const getSuggestorContent = (text) => {
   return [...new Set(suggestContent)]
 }
 
-const updateDocInIndex = asyncHandler(async (req, res) => {
-  let { index, text } = req.body
-  if (!index) {
-    index = INDEX
-  }
-})
-
 module.exports = {
   getSearchResults,
   getSuggestion,
+  createIndex,
   clearIndex,
   addToIndex,
-  createIndex,
   getIndex,
   analyzeText,
   getSearchResults2,
   getSuggestion2,
+  updateDocInIndex,
+  getDocInIndex,
 }

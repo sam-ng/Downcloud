@@ -11,6 +11,8 @@ const {
   analyzeText,
   getSearchResults2,
   getSuggestion2,
+  updateDocInIndex,
+  getDocInIndex,
 } = require('../controllers/indexController')
 
 router.get('/search', getSearchResults)
@@ -22,5 +24,7 @@ router.post('/get', getIndex)
 router.post('/analyze', analyzeText)
 router.post('/search2', getSearchResults2)
 router.post('/suggest2', getSuggestion2)
+router.post('/update', updateDocInIndex)
+router.post('/getdocinindex', getDocInIndex)
 
 module.exports = router
