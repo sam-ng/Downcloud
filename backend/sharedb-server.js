@@ -53,30 +53,30 @@ backend.use('afterWrite', async (request, callback) => {
       .limit(1)
       .toArray()
 
-    console.log(latestSnapshot)
-    console.log(docID)
+    // console.log(latestSnapshot)
+    // console.log(docID)
 
     // snapshot not created yet
     if (!latestSnapshot || latestSnapshot.length === 0) {
-      console.log('snapshot not created')
+      // console.log('snapshot not created')
       callback()
       return
     }
 
-    console.log('snapshot was created already')
+    // console.log('snapshot was created already')
 
     const content = latestSnapshot[0].data.ops
     const cfg = {}
     const converter = new QuillDeltaToHtmlConverter(content, cfg)
     const html = converter.convert()
-    console.log('before response')
+    // console.log('before response')
     const response = await indexController.addToIndexHelper(
       INDEX,
       docName,
       html,
       docID
     )
-    console.log(response)
+    // console.log(response)
   }
   callback()
 })
