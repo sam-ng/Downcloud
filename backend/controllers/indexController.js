@@ -35,7 +35,7 @@ const getSearchResults = asyncHandler(async (req, res) => {
 
   const results = response.hits.hits.map((hit) => {
     return {
-      docid: hit._source.id,
+      docid: hit._id,
       name: hit._source.title,
       snippet: hit.highlight.content[0],
     }
@@ -186,6 +186,12 @@ const addToIndex = asyncHandler(async (req, res) => {
     throw new Error('Please enter title and content')
   }
 
+  const response = await addToIndexHelper(index, title, content, id)
+
+  res.json(response)
+})
+
+const addToIndexHelper = async (index, title, content, id) => {
   const titleSuggestions = getSuggestorContent(title)
   const contentSuggestions = getSuggestorContent(content)
   const suggestions = titleSuggestions.concat(contentSuggestions)
@@ -201,8 +207,8 @@ const addToIndex = asyncHandler(async (req, res) => {
     },
   })
 
-  res.json(response)
-})
+  return response
+}
 
 // @desc    Get everything index
 // @route   POST /index/get
@@ -390,4 +396,7 @@ module.exports = {
   getSuggestion2,
   updateDocInIndex,
   getDocInIndex,
+
+  // Helpers
+  addToIndexHelper,
 }
