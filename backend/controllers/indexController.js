@@ -13,27 +13,35 @@ const getSearchResults = asyncHandler(async (req, res) => {
   const searchText = req.query.q
   updatedSearchText = searchText.trim()
 
-  // TODO:
-  // const response = await esClient.search({
-  //   index: INDEX,
-  //   body: {
-  //     query: {
-  //       multi_match: {
-  //         query: updatedSearchText,
-  //         fields: ['title', 'content'],
-  //       },
-  //     },
-  //     highlight: {
-  //       number_of_fragments: 1,
-  //       fragment_size: 100,
-  //       fields: {
-  //         content: {},
-  //       },
-  //     },
-  //   },
-  // })
+  const response = await esClient.search({
+    index: INDEX,
+    body: {
+      query: {
+        multi_match: {
+          query: updatedSearchText,
+          type: 'phrase',
+          fields: ['title', 'content'],
+        },
+      },
+      highlight: {
+        number_of_fragments: 1,
+        fragment_size: 100,
+        fields: {
+          content: {},
+        },
+      },
+    },
+  })
 
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json(response)
+  const results = response.hits.hits.map((hit) => {
+    return {
+      docid: hit._source.docid,
+      name: hit._source.title,
+      snippet: hit.highlight.content[0],
+    }
+  })
+
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json(results)
 })
 
 // @desc    Get suggestion
@@ -103,6 +111,9 @@ const createIndex = asyncHandler(async (req, res) => {
           // search_analyzer: CUSTOM_ANALYZER_NAME,
           // analyzer: 'autocomplete_analyzer',
         },
+        docid: {
+          type: 'keyword',
+        },
         suggest: {
           type: 'completion',
           analyzer: CUSTOM_ANALYZER_NAME,
@@ -134,7 +145,7 @@ const clearIndex = asyncHandler(async (req, res) => {
 // @route   POST /index/add
 // @access  Private
 const addToIndex = asyncHandler(async (req, res) => {
-  let { index, title, content } = req.body
+  let { index, title, content, docid } = req.body
   if (!index) {
     index = INDEX
   }
@@ -152,6 +163,7 @@ const addToIndex = asyncHandler(async (req, res) => {
     body: {
       title,
       content,
+      docid,
       // TODO: improve/optimize
       suggest: suggestions,
     },
@@ -217,6 +229,7 @@ const getSearchResults2 = asyncHandler(async (req, res) => {
       query: {
         multi_match: {
           query: searchText,
+          type: 'phrase',
           fields: ['title', 'content'],
         },
       },
@@ -288,7 +301,12 @@ const getSuggestorContent = (text) => {
   return [...new Set(suggestContent)]
 }
 
-// TODO: update document in index
+const updateDocInIndex = asyncHandler(async (req, res) => {
+  let { index, text } = req.body
+  if (!index) {
+    index = INDEX
+  }
+})
 
 module.exports = {
   getSearchResults,

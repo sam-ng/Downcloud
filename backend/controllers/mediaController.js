@@ -16,7 +16,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 10000000 },
   fileFilter: (req, file, cb) => {
-    const whitelist = ['image/png', 'image/jpeg', 'image/jpg']
+    const whitelist = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
 
     // logger.info(`mimetype: ${file.mimetype}`)
 

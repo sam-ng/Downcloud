@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@elastic/elasticsearch": "^7.17.0",
+    "@elastic/elasticsearch": "^8.1.0",
     "@teamwork/websocket-json-stream": "^2.0.0",
     "axios": "^0.26.1",
     "connect-mongodb-session": "^3.1.1",
