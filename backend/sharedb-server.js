@@ -38,13 +38,12 @@ const snapshotCollection = database.collection('m_collection')
 const db = require('sharedb-mongo')(process.env.MONGO_URI)
 const milestoneDb = new MongoMilestoneDB({
   mongo: process.env.MONGO_URI,
+  interval: numVersionsForSnapshot,
 })
 const backend = new ShareDB({ db, presence: true, milestoneDb })
 
-backend.use('commit', async (request, callback) => {
+backend.use('afterWrite', async (request, callback) => {
   if (request.snapshot.v % numVersionsForSnapshot === 0) {
-    request.saveMilestoneSnapshot = true
-
     const docID = request.snapshot.id
     const docMap = await DocumentMap.findOne({ docID })
     const docName = docMap.name
@@ -78,11 +77,7 @@ backend.use('commit', async (request, callback) => {
       docID
     )
     console.log(response)
-  } else {
-    console.log('not saving every 10 snapshot')
-    request.saveMilestoneSnapshot = false
   }
-
   callback()
 })
 
