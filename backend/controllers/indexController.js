@@ -364,10 +364,16 @@ const getDocInIndex = asyncHandler(async (req, res) => {
 const getSuggestorContent = (text) => {
   let updatedText = text.trim()
   updatedText = updatedText.toLowerCase()
-  let suggestContent = updatedText.split(/\W+/) // split on non-word characters
+
+  // split on non-word characters
+  let suggestContent = updatedText.split(/\W+/)
+
+  // keep words >= length 5 only:
+  suggestContent = suggestContent.filter((word) => word.length >= 5)
+
   // TODO: stop words
   // TODO: stem words
-  // TODO: optimize
+  // TODO: optimize, reorder operations
 
   return [...new Set(suggestContent)]
 }
