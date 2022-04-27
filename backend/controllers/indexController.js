@@ -48,7 +48,8 @@ const getSearchResults = asyncHandler(async (req, res) => {
 // @route   GET /index/suggest
 // @access  Private
 const getSuggestion = asyncHandler(async (req, res) => {
-  // TODO:
+  // TODO: same as getSuggestion 2, but filter out matching words
+
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
 })
 
@@ -117,6 +118,11 @@ const createIndex = asyncHandler(async (req, res) => {
         suggest: {
           type: 'completion',
           analyzer: CUSTOM_ANALYZER_NAME,
+          // fields: {
+          //   text: {
+          //     type: 'text',
+          //   },
+          // },
         },
       },
     },
@@ -281,11 +287,11 @@ const getSuggestion2 = asyncHandler(async (req, res) => {
       suggest: {
         autocomplete_suggest: {
           prefix: searchText,
-          // regex: searchText + '.+',
+          // regex: searchText + '(.+)',
           completion: {
             field: 'suggest',
-            size: 10,
-            skip_duplicates: true,
+            // size: 10,
+            // skip_duplicates: true,
           },
         },
       },
