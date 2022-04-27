@@ -48,9 +48,35 @@ const getSearchResults = asyncHandler(async (req, res) => {
 // @route   GET /index/suggest
 // @access  Private
 const getSuggestion = asyncHandler(async (req, res) => {
-  // TODO: same as getSuggestion 2, but filter out matching words
+  const searchText = req.query.q
+  updatedSearchText = searchText.trim()
 
-  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
+  const response = await esClient.search({
+    index: INDEX,
+    body: {
+      suggest: {
+        autocomplete_suggest: {
+          prefix: updatedSearchText,
+          // regex: searchText + '(.+)',
+          completion: {
+            field: 'suggest',
+            size: 3,
+            skip_duplicates: true,
+          },
+        },
+      },
+    },
+  })
+
+  const results = response.suggest.autocomplete_suggest[0].options
+    .map((suggestion) => {
+      if (suggestion.text != updatedSearchText) {
+        return suggestion.text
+      }
+    })
+    .filter((word) => word)
+
+  res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json(results)
 })
 
 // @desc    Create index
@@ -290,8 +316,8 @@ const getSuggestion2 = asyncHandler(async (req, res) => {
           // regex: searchText + '(.+)',
           completion: {
             field: 'suggest',
-            // size: 10,
-            // skip_duplicates: true,
+            size: 3,
+            skip_duplicates: true,
           },
         },
       },
@@ -307,19 +333,13 @@ const updateDocInIndex = asyncHandler(async (req, res) => {
     index = INDEX
   }
 
-  // TODO: add title to updated suggestions
-  // const titleSuggestions = getSuggestorContent(title)
-  // const contentSuggestions = getSuggestorContent(content)
-  // const suggestions = titleSuggestions.concat(contentSuggestions)
-  const suggestions = getSuggestorContent(text)
-
   const response = await esClient.update({
     index,
     id,
     body: {
       doc: {
         content: text,
-        suggest: suggestions,
+        suggest: getSuggestorContent(text),
       },
     },
   })
@@ -342,11 +362,11 @@ const getDocInIndex = asyncHandler(async (req, res) => {
 })
 
 const getSuggestorContent = (text) => {
-  let updatedText = text.trim() // trim whitespace
+  let updatedText = text.trim()
+  updatedText = updatedText.toLowerCase()
   let suggestContent = updatedText.split(/\W+/) // split on non-word characters
   // TODO: stop words
   // TODO: stem words
-  // TODO: remove random characters, punctuation, everything an analyzer does
   // TODO: optimize
 
   return [...new Set(suggestContent)]
