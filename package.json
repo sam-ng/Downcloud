@@ -7,7 +7,9 @@
     "server": "nodemon backend/server.js",
     "sharedb-server": "nodemon backend/sharedb-server.js",
     "build": "concurrently \" browserify static/scripts/document.js -o static/bundle-document.js && browserify static/scripts/index.js -o static/bundle-index.js\"",
-    "dev": "concurrently \"npm run build && npm run sharedb-server\" \"npm run server\""
+    "dev": "concurrently \"npm run build && npm run sharedb-server\" \"npm run server\"",
+    "pm2": "concurrently \"npm run build && pm2 start backend/sharedb-server.js -i 3\" \"pm2 start backend/server.js -i 1\"",
+    "stop": "pm2 stop all && pm2 delete all"
   },
   "author": "",
   "license": "ISC",

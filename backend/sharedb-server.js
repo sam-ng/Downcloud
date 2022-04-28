@@ -28,7 +28,7 @@ connectDatabase()
 // Elastic variables
 const INDEX = 'downcloud'
 const CUSTOM_ANALYZER_NAME = 'custom_analyzer'
-const numVersionsForSnapshot = 10
+const numVersionsForSnapshot = 10000 // TODO: change
 const client = new MongoClient(process.env.MONGO_URI)
 connectMongoClient(client)
 const database = client.db('test')

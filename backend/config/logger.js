@@ -13,7 +13,7 @@ const logger = winston.createLogger({
       (info) => `[${info.level}] - (${[info.timestamp]}): ${info.message}`
     )
   ),
-  silent: true, // FIXME: change to true before submitting
+  silent: false, // FIXME: change to true before submitting
 })
 
 logger.info('Logger created')
