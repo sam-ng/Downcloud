@@ -23,9 +23,6 @@ const fetchDocumentMaps = async (docs) => {
 // @access  Private
 const createDoc = asyncHandler(async (req, res, next) => {
   // logger.info('creating a new doc')
-  if (!req.body) {
-    // logger.error('[createController]: name was not specified')
-  }
   const docID = uuidv4()
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
 
@@ -38,7 +35,10 @@ const createDoc = asyncHandler(async (req, res, next) => {
     // Set initial contents
     if (doc.type === null) {
       doc.create([], 'rich-text')
-      DocumentMap.create({ docID, name: req.body.name })
+      DocumentMap.create({
+        docID,
+        name: req.body.name ? req.body.name : 'Test',
+      })
       res
         .set('X-CSE356', '61f9c5ceca96e9505dd3f8b4')
         .status(200)
