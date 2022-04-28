@@ -12,7 +12,7 @@ const fetchDocumentMaps = async (docs) => {
   await Promise.all(
     docs.map(async (doc) => {
       const documentMap = await DocumentMap.findOne({ docID: doc.id }).exec()
-      docIDNamePairs[documentMap.docID] = documentMap.name
+      docIDNamePairs[documentMap.docID] = documentMap.name || 'noname'
     })
   )
   return docIDNamePairs

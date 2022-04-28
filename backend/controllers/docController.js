@@ -72,7 +72,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
     // logger.info('subscribed to doc')
 
     // Create event stream and initial doc data
-    logger.info(`sending back version ${doc.version} content: ${JSON.stringify(doc.data.ops)}`)
+    // logger.info(`sending back version ${doc.version} content: ${JSON.stringify(doc.data.ops)}`)
     res.write(
       `data: ${JSON.stringify({
         content: doc.data.ops,
@@ -88,7 +88,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
   // When we apply an op to the doc, update all other clients
   doc.on('op', (op, source) => {
-    logger.info(`${clientID} applying op from ${source}: ${JSON.stringify(op)}`)
+    // logger.info(`${clientID} applying op from ${source}: ${JSON.stringify(op)}`)
 
     if (clientID === source) {
       // logger.info(`acking client ${clientID}`)
@@ -120,7 +120,7 @@ const openConnection = asyncHandler(async (req, res, next) => {
       throw err
     }
 
-    logger.info('presence subscribed')
+    // logger.info('presence subscribed')
   })
 
   // An update from a remote presence client has been received
