@@ -9,6 +9,17 @@ const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
 const connection = require('../config/connection')
 
+// Elastic indexing: least recently modified docs
+let lrmDocsHead = null
+let lrmDocsTail = null
+const docIDsToDocTimeNode = new Map()
+// let docTimeNode = {
+//   docid,
+//   lastModifiedTime,
+//   prev,
+//   next,
+// }
+
 // Register rich text
 sharedb.types.register(richText.type)
 
@@ -198,6 +209,9 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       // reset docVersions to doc.version
       docVersions[doc.id] = doc.version
 
+      // save op as docTimeNode
+      saveOpAsDocTimeNode(docid)
+
       client.res.write(
         `data: ${JSON.stringify({
           ack: op,
@@ -211,6 +225,89 @@ const updateDocument = asyncHandler(async (req, res, next) => {
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'retry' })
   }
 })
+
+const saveOpAsDocTimeNode = (docid) => {
+  let node = docIDsToDocTimeNode.get(docid)
+
+  // Node already exist in linked list
+  if (node) {
+    // update time
+    node.lastModifiedTime = Date.now()
+
+    // case: node is head and tail (1 node in linked list)
+    if (node === lrmDocsHead && node === lrmDocsTail) {
+      // do nothing
+      return
+    }
+
+    // case: node is head (at least 2 nodes in linked list)
+    if (node === lrmDocsHead) {
+      // set new head
+      lrmDocsHead = node.next
+      lrmDocsHead.prev = null
+
+      // move node to end of linked list
+      node.prev = lrmDocsTail
+      lrmDocsTail.next = node
+      node.next = null
+
+      // update tail
+      lrmDocsTail = node
+
+      return
+    }
+
+    // case: node is tail (at least 2 nodes in linked list)
+    if (node === lrmDocsTail) {
+      // do nothing
+      return
+    }
+
+    // case: middle node
+    // get prev and next nodes
+    let beforeNode = node.prev
+    let afterNode = node.next
+
+    // remove node from middle of linked list
+    beforeNode.next = afterNode
+    afterNode.prev = beforeNode
+
+    // add node to end of linked list
+    node.prev = lrmDocsTail
+    lrmDocsTail.next = node
+    node.next = null
+
+    // update tail
+    lrmDocsTail = node
+
+    return
+  }
+
+  // Create node; node does not exist yet
+  node = {
+    docid,
+    lastModifiedTime: Date.now(),
+    prev: null,
+    next: null,
+  }
+
+  // Save node in linked list
+  if (!lrmDocsHead) {
+    // no items in linked list
+    lrmDocsHead = node
+    lrmDocsTail = node
+  } else {
+    // at least 1 item in linked list; add to end
+    node.prev = lrmDocsTail
+    lrmDocsTail.next = node
+
+    // update tail
+    lrmDocsTail = node
+  }
+
+  // Add node to map
+  map.set(docid, node)
+}
 
 // @desc    Update presence
 // @route   POST /doc/presence/:docid/:uid
