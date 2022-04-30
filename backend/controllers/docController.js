@@ -59,19 +59,19 @@ const openConnection = asyncHandler(async (req, res, next) => {
   logger.info(`connecting uid: ${uid} in docid: ${docid} `)
 
   // Open WebSocket connection to ShareDB server
-  // const rws = new ReconnectingWebSocket(
-  //   `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
-  //   [],
-  //   {
-  //     WebSocket: WebSocket,
-  //     // debug: false,
-  //   }
-  // )
-  // const connection = new sharedb.Connection(rws)
-  const rws = new WebSocket(
-    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`
+  const rws = new ReconnectingWebSocket(
+    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
+    [],
+    {
+      WebSocket: WebSocket,
+      // debug: false,
+    }
   )
   const connection = new sharedb.Connection(rws)
+  // const rws = new WebSocket(
+  //   `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`
+  // )
+  // const connection = new sharedb.Connection(rws)
 
   // Get doc
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)

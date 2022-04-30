@@ -25,7 +25,7 @@ const getSearchResults = asyncHandler(async (req, res) => {
       },
       highlight: {
         number_of_fragments: 1,
-        fragment_size: 100,
+        fragment_size: 200,
         fields: {
           content: {},
         },
@@ -262,7 +262,7 @@ const getSearchResults2 = asyncHandler(async (req, res) => {
   let searchText = text.trim()
 
   const response = await esClient.search({
-    index,
+    index: INDEX,
     body: {
       query: {
         multi_match: {
@@ -273,7 +273,7 @@ const getSearchResults2 = asyncHandler(async (req, res) => {
       },
       highlight: {
         number_of_fragments: 1,
-        fragment_size: 100,
+        fragment_size: 200,
         fields: {
           content: {},
         },
