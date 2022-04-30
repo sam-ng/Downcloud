@@ -1,4 +1,4 @@
 const { Client } = require('@elastic/elasticsearch')
-const esClient = new Client({ node: 'http://downcloud.cse356.compas.cs.stonybrook.edu:9200' })
+const esClient = new Client({ node: process.env.ES_URI })
 
 module.exports = esClient
