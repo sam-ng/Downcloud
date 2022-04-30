@@ -4,6 +4,7 @@ const DocumentMap = require('../models/documentMapModel')
 const { v4: uuidv4 } = require('uuid')
 const { logger } = require('../config/logger')
 const { clients, docIDToDocs } = require('../server')
+let serverNumber = 1
 
 // TODO: optimize query if possible
 // Fetches document mappings for queried documents
@@ -23,7 +24,9 @@ const fetchDocumentMaps = async (docs) => {
 // @access  Private
 const createDoc = asyncHandler(async (req, res, next) => {
   // logger.info('creating a new doc')
-  const docID = uuidv4()
+  const docID = uuidv4() + '-' + serverNumber
+  serverNumber = (serverNumber % process.env.NUM_DOC_SERVERS) + 1
+  console.log(serverNumber)
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
 
   // Create doc
