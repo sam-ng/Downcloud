@@ -8,6 +8,8 @@ const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
 const connection = require('../config/connection')
+const indexController = require('./indexController')
+const DocumentMap = require('./models/documentMapModel')
 
 // Elastic indexing: least recently modified docs
 let lrmDocsHead = null
@@ -15,6 +17,8 @@ let lrmDocsTail = null
 const docIDsToDocTimeNode = new Map()
 // let docTimeNode = {
 //   docid,
+//   title,
+//   content,
 //   lastModifiedTime,
 //   prev,
 //   next,
@@ -201,7 +205,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
 
   if (version === docVersions[doc.id]) {
     docVersions[doc.id] += 1
-    doc.submitOp(op, { source: clientID }, (err) => {
+    doc.submitOp(op, { source: clientID }, async (err) => {
       if (err) {
         throw err
       }
@@ -210,7 +214,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       docVersions[doc.id] = doc.version
 
       // save op as docTimeNode
-      saveOpAsDocTimeNode(docid)
+      await saveOpAsDocTimeNode(docid, doc.data.ops)
 
       client.res.write(
         `data: ${JSON.stringify({
@@ -226,13 +230,14 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   }
 })
 
-const saveOpAsDocTimeNode = (docid) => {
+const saveOpAsDocTimeNode = async (docid, content) => {
   let node = docIDsToDocTimeNode.get(docid)
 
   // Node already exist in linked list
   if (node) {
-    // update time
+    // update time and content
     node.lastModifiedTime = Date.now()
+    node.content = content
 
     // case: node is head and tail (1 node in linked list)
     if (node === lrmDocsHead && node === lrmDocsTail) {
@@ -284,8 +289,12 @@ const saveOpAsDocTimeNode = (docid) => {
   }
 
   // Create node; node does not exist yet
+  const docMap = await DocumentMap.findOne({ docID: docid })
+  const title = docMap.name
   node = {
     docid,
+    title,
+    content,
     lastModifiedTime: Date.now(),
     prev: null,
     next: null,
@@ -389,3 +398,41 @@ module.exports = {
   updatePresence,
   getDoc,
 }
+
+// Set intervals
+const intervalTime = 5000
+const lastOpTime = 5000
+const indexDocument = () => {
+  let nodeptr = lrmDocsHead
+  while (nodeptr != null) {
+    const timeNow = Date.now()
+    const timeSubmittedOp = nodeptr.lastModifiedTime
+    const diff = timeNow - timeSubmittedOp
+
+    // don't index
+    if (diff < lastOpTime) {
+      break
+    }
+
+    // index the doc
+    const html = new QuillDeltaToHtmlConverter(nodeptr.content).convert()
+    indexController.addToIndexHelper(
+      'downcloud',
+      nodeptr.title,
+      html,
+      nodeptr.docid
+    )
+
+    // remove from linked list
+    if (nodeptr === lrmDocsTail) {
+      lrmDocsTail = null
+    } else {
+      nodeptr.next.prev = null
+    }
+
+    // move nodeptr and head
+    nodeptr = nodeptr.next
+    lrmDocsHead = nodeptr
+  }
+}
+setInterval(indexDocument, 5000)
