@@ -133,3 +133,6 @@ dist
 static/bundle.js
 static/bundle-document.js
 static/bundle-index.js
+
+# images
+images
