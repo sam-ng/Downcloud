@@ -1,8 +1,8 @@
 const asyncHandler = require('express-async-handler')
 const QuillDeltaToHtmlConverter =
   require('quill-delta-to-html').QuillDeltaToHtmlConverter
-const { clients, docVersions } = require('../server')
-const { logger, objLogger } = require('../config/logger')
+const { clients, docVersions, docIDToDocs } = require('../server')
+const { logger } = require('../config/logger')
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
@@ -35,7 +35,6 @@ const headers = {
   Connection: 'keep-alive',
   'Cache-Control': 'no-cache',
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
-  'X-Accel-Buffering': 'no',
 }
 
 // @desc    Render doc
@@ -58,124 +57,70 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
   logger.info(`connecting uid: ${uid} in docid: ${docid} `)
 
-  // Open WebSocket connection to ShareDB server
-  const rws = new ReconnectingWebSocket(
-    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
-    [],
-    {
-      WebSocket: WebSocket,
-      // debug: false,
-    }
-  )
-  const connection = new sharedb.Connection(rws)
-  // const rws = new WebSocket(
-  //   `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`
-  // )
-  // const connection = new sharedb.Connection(rws)
+  // Get doc instance
+  let doc = docIDToDocs[docid]
+  if (!doc) {
+    doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
+    docIDToDocs[docid] = doc
 
-  // Get doc
-  const doc = connection.get(process.env.CONNECTION_COLLECTION, docid)
+    // Set up event listeners
+    doc.subscribe((err) => {
+      if (err) {
+        throw err
+      }
+
+      // Save doc version
+      if (!docVersions[doc.id]) {
+        docVersions[doc.id] = doc.version
+        // logger.info(`set initial docVersions[doc.id]: ${docVersions[doc.id]}`)
+      }
+    })
+
+    // Subscribe presence once
+    connection.getPresence(docid).subscribe()
+  }
 
   // Set event stream headers
   res.set(headers)
 
-  // Get inital doc data from server and listen for changes
-  doc.subscribe((err) => {
+  // Get the doc
+  doc.fetch((err) => {
     if (err) {
       throw err
     }
 
     if (doc.type === null) {
       next(new Error('doc does not exist'))
-      return
     }
 
-    // logger.info('subscribed to doc')
-
-    // Create event stream and initial doc data
-    // logger.info(`sending back version ${doc.version} content: ${JSON.stringify(doc.data.ops)}`)
+    // Send initial doc data
+    // logger.info('sending back inital content and version, logged below: ')
+    // logger.info(doc.data.ops)
+    // logger.info(doc.version)
     res.write(
       `data: ${JSON.stringify({
         content: doc.data.ops,
         version: doc.version,
       })} \n\n`
     )
-
-    // Save doc version if it does not already exist
-    if (!docVersions[doc.id]) {
-      docVersions[doc.id] = doc.version
-    }
   })
 
-  // When we apply an op to the doc, update all other clients
-  doc.on('op', (op, source) => {
-    // logger.info(`${clientID} applying op from ${source}: ${JSON.stringify(op)}`)
-
-    if (clientID === source) {
-      // logger.info(`acking client ${clientID}`)
-      // res.write(
-      //   `data: ${JSON.stringify({
-      //     ack: op,
-      //   })} \n\n`
-      // )
-    } else {
-      // logger.info(`updating client ${clientID}`)
-      if (op.ops) {
-        res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
-      } else {
-        res.write(`data: ${JSON.stringify(op)} \n\n`)
-      }
-    }
-  })
-
-  // Get presence
-  const presence = doc.connection.getDocPresence(
-    process.env.CONNECTION_COLLECTION,
-    docid
-  )
-
-  // Subscribe to presence updates
-  // TODO: check if subscribing multiple times to a document causes an issue.
-  presence.subscribe((err) => {
-    if (err) {
-      throw err
-    }
-
-    // logger.info('presence subscribed')
-  })
-
-  // An update from a remote presence client has been received
-  presence.on('receive', (id, range) => {
-    // logger.info(`presence received from ${id}: ${JSON.stringify(range)}`)
-    res.write(
-      `data: ${JSON.stringify({ presence: { id, cursor: range } })} \n\n`
-    )
-  })
-
-  const localPresence = presence.create(clientID)
+  const localPresence = connection.getPresence(docid).create(clientID)
 
   // Store client info
   const clientObj = {
     clientID,
     res,
-    connection,
-    doc,
-    presence,
     localPresence,
-    rws,
   }
   clients[clientID] = clientObj
 
   // Client closed the connection
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
-
-    // presence.destroy()
-    doc.destroy()
+    localPresence.destroy()
     res.socket.destroy()
     res.end()
-    rws.close()
-
     // delete clients[clientID]
   })
 })
@@ -196,17 +141,13 @@ const updateDocument = asyncHandler(async (req, res, next) => {
   const { version, op } = req.body
   const clientID = uid
   const client = clients[clientID]
-  const doc = client.doc
 
   // check uid exist
   if (!clients[clientID]) {
     throw new Error('uid does not exist')
   }
 
-  // check if docid matches
-  if (docid !== doc.id) {
-    throw new Error('docid does not match doc.id of client')
-  }
+  const doc = docIDToDocs[docid]
 
   // logger.info(`client ${uid} attempting to update document ${docid}`)
   // logger.info(op)
@@ -223,11 +164,23 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       // reset docVersions to doc.version
       docVersions[doc.id] = doc.version
 
-      client.res.write(
-        `data: ${JSON.stringify({
-          ack: op,
-        })} \n\n`
-      )
+      // Loop all clients and ack ops for source and delta op for others
+      const source = clientID
+      for (const [clientID, client] of Object.entries(clients)) {
+        if (source === clientID) {
+          client.res.write(
+            `data: ${JSON.stringify({
+              ack: op,
+            })} \n\n`
+          )
+        } else {
+          if (op.ops) {
+            client.res.write(`data: ${JSON.stringify(op.ops)} \n\n`)
+          } else {
+            client.res.write(`data: ${JSON.stringify(op)} \n\n`)
+          }
+        }
+      }
 
       // save op as docTimeNode
       saveOpAsDocTimeNode(docid, doc.data.ops)
@@ -345,11 +298,16 @@ const updatePresence = asyncHandler(async (req, res) => {
     throw new Error('No connection id specified.')
   }
 
-  const { uid } = req.params
+  const { docid, uid } = req.params
   let range = req.body // req.body is {index, length}
   range.name = req.session.name
   const clientID = uid
   const client = clients[clientID]
+  const doc = docIDToDocs[docid]
+
+  if (!client) {
+    next(new Error('client does not exist, unable to update presence'))
+  }
 
   // logger.info(`updating presence for ${uid}`)
   // logger.info(`presence to submit: `)
@@ -362,6 +320,30 @@ const updatePresence = asyncHandler(async (req, res) => {
 
     // logger.info(`presence submitted: `)
     // logger.info(range)
+
+    const presence = connection.getPresence(docid)
+    const localPresences = presence.localPresences
+
+    for (const [clientID, localPresence] of Object.entries(localPresences)) {
+      const client = clients[clientID]
+
+      // Skip adding presence for this client
+      if (clientID === uid) {
+        continue
+      }
+
+      if (!client) {
+        next(
+          new Error(
+            'localPresences contains presence info for a client that does not exist'
+          )
+        )
+      }
+
+      client.res.write(
+        `data: ${JSON.stringify({ presence: { id: uid, cursor: range } })} \n\n`
+      )
+    }
   })
 
   res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({})
@@ -378,18 +360,13 @@ const getDoc = asyncHandler(async (req, res) => {
   const { docid, uid } = req.params
   const clientID = uid
   const client = clients[clientID]
-  const doc = client.doc
 
   // check uid exist
-  if (!clients[clientID]) {
+  if (!client) {
     throw new Error('uid does not exist')
   }
 
-  // check if docid matches
-  if (docid !== doc.id) {
-    throw new Error('docid does not match doc.id of client')
-  }
-
+  const doc = docIDToDocs[docid]
   doc.fetch((err) => {
     if (err) {
       throw err

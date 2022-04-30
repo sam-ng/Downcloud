@@ -140,3 +140,7 @@ evtSource.onmessage = (event) => {
     // quill.updateContents(data)
   }
 }
+
+evtSource.addEventListener('error', (err) => {
+  console.log(err)
+})

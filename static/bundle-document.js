@@ -17848,4 +17848,8 @@ evtSource.onmessage = (event) => {
   }
 }
 
+evtSource.addEventListener('error', (err) => {
+  console.log(err)
+})
+
 },{"axios":1,"quill":36,"quill-cursors":35,"tinycolor2":37,"uuid":38}]},{},[53]);

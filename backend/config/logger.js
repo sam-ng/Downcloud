@@ -16,6 +16,14 @@ const logger = winston.createLogger({
   silent: false, // FIXME: change to true before submitting
 })
 
+const objLogger = winston.createLogger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/downcloud-obj.log' }),
+  ],
+  silent: false, // FIXME: change to true before submitting
+})
+
 logger.info('Logger created')
 
-module.exports = { logger }
+module.exports = { logger, objLogger }
