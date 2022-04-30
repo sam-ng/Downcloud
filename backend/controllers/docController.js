@@ -9,7 +9,7 @@ const ReconnectingWebSocket = require('reconnecting-websocket')
 const WebSocket = require('ws')
 const connection = require('../config/connection')
 const indexController = require('./indexController')
-const DocumentMap = require('./models/documentMapModel')
+const DocumentMap = require('../models/documentMapModel')
 
 // Elastic indexing: least recently modified docs
 let lrmDocsHead = null
@@ -315,7 +315,7 @@ const saveOpAsDocTimeNode = async (docid, content) => {
   }
 
   // Add node to map
-  map.set(docid, node)
+  docIDsToDocTimeNode.set(docid, node)
 }
 
 // @desc    Update presence
@@ -429,6 +429,9 @@ const indexDocument = () => {
     } else {
       nodeptr.next.prev = null
     }
+
+    // remove from map
+    docIDsToDocTimeNode.delete(nodeptr.docid)
 
     // move nodeptr and head
     nodeptr = nodeptr.next
