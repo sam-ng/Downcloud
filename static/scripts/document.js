@@ -140,3 +140,10 @@ evtSource.onmessage = (event) => {
     // quill.updateContents(data)
   }
 }
+
+evtSource.addEventListener('error', (err) => {
+  if (err.status === 401 || err.status === 403) {
+    console.error('not authorized')
+  }
+  console.log(err)
+})

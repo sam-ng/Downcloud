@@ -17848,4 +17848,11 @@ evtSource.onmessage = (event) => {
   }
 }
 
+evtSource.addEventListener('error', (err) => {
+  if (err.status === 401 || err.status === 403) {
+    console.error('not authorized')
+  }
+  console.log(err)
+})
+
 },{"axios":1,"quill":36,"quill-cursors":35,"tinycolor2":37,"uuid":38}]},{},[53]);

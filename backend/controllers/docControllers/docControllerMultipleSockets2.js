@@ -2,7 +2,7 @@ const asyncHandler = require('express-async-handler')
 const QuillDeltaToHtmlConverter =
   require('quill-delta-to-html').QuillDeltaToHtmlConverter
 const { clients, docVersions } = require('../server')
-const { logger, objLogger } = require('../config/logger')
+const { logger } = require('../config/logger')
 const sharedb = require('sharedb/lib/client')
 const richText = require('rich-text')
 const ReconnectingWebSocket = require('reconnecting-websocket')
@@ -12,7 +12,6 @@ const indexController = require('./indexController')
 const DocumentMap = require('../models/documentMapModel')
 
 // Elastic indexing: least recently modified docs
-let localDocMap = new Map()
 let lrmDocsHead = null
 let lrmDocsTail = null
 const docIDsToDocTimeNode = new Map()
@@ -35,7 +34,6 @@ const headers = {
   Connection: 'keep-alive',
   'Cache-Control': 'no-cache',
   'Access-Control-Allow-Origin': `http://${process.env.SITE}:${process.env.SERVER_PORT}`,
-  'X-Accel-Buffering': 'no',
 }
 
 // @desc    Render doc
@@ -59,17 +57,13 @@ const openConnection = asyncHandler(async (req, res, next) => {
   logger.info(`connecting uid: ${uid} in docid: ${docid} `)
 
   // Open WebSocket connection to ShareDB server
-  // const rws = new ReconnectingWebSocket(
-  //   `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
-  //   [],
-  //   {
-  //     WebSocket: WebSocket,
-  //     // debug: false,
-  //   }
-  // )
-  // const connection = new sharedb.Connection(rws)
-  const rws = new WebSocket(
-    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`
+  const rws = new ReconnectingWebSocket(
+    `ws://${process.env.SITE}:${process.env.SHAREDB_PORT}`,
+    [],
+    {
+      WebSocket: WebSocket,
+      // debug: false,
+    }
   )
   const connection = new sharedb.Connection(rws)
 
@@ -162,20 +156,16 @@ const openConnection = asyncHandler(async (req, res, next) => {
     doc,
     presence,
     localPresence,
-    rws,
   }
   clients[clientID] = clientObj
 
   // Client closed the connection
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
-
-    // presence.destroy()
+    presence.destroy()
     doc.destroy()
     res.socket.destroy()
     res.end()
-    rws.close()
-
     // delete clients[clientID]
   })
 })
@@ -215,7 +205,7 @@ const updateDocument = asyncHandler(async (req, res, next) => {
 
   if (version === docVersions[doc.id]) {
     docVersions[doc.id] += 1
-    doc.submitOp(op, { source: clientID }, (err) => {
+    doc.submitOp(op, { source: clientID }, async (err) => {
       if (err) {
         throw err
       }
@@ -223,15 +213,14 @@ const updateDocument = asyncHandler(async (req, res, next) => {
       // reset docVersions to doc.version
       docVersions[doc.id] = doc.version
 
+      // save op as docTimeNode
+      await saveOpAsDocTimeNode(docid, doc.data.ops)
+
       client.res.write(
         `data: ${JSON.stringify({
           ack: op,
         })} \n\n`
       )
-
-      // save op as docTimeNode
-      saveOpAsDocTimeNode(docid, doc.data.ops)
-
       res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').json({ status: 'ok' })
     })
   } else {
@@ -300,12 +289,8 @@ const saveOpAsDocTimeNode = async (docid, content) => {
   }
 
   // Create node; node does not exist yet
-  let title = localDocMap.get(docid)
-  if (!title) {
-    const docMap = await DocumentMap.findOne({ docID: docid })
-    title = docMap.name
-    localDocMap.set(docid, title)
-  }
+  const docMap = await DocumentMap.findOne({ docID: docid })
+  const title = docMap.name
   node = {
     docid,
     title,
