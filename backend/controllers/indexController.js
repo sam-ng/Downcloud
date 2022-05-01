@@ -91,6 +91,9 @@ const createIndex = asyncHandler(async (req, res) => {
   const response = await esClient.indices.create({
     index,
     settings: {
+      index: {
+        'highlight.max_analyzed_offset': 3000000,
+      },
       analysis: {
         // filter: {
         //   autocomplete_filter: {
@@ -134,6 +137,7 @@ const createIndex = asyncHandler(async (req, res) => {
         },
         content: {
           type: 'text',
+          // index_options: 'offsets',
           analyzer: CUSTOM_ANALYZER_NAME,
           // search_analyzer: CUSTOM_ANALYZER_NAME,
           // analyzer: 'autocomplete_analyzer',
