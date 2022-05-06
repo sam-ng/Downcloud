@@ -50,22 +50,30 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ limit: '10mb', extended: false }))
 
 // Serve static files
-app.use(express.static('static'))
-app.use(express.static('node_modules/quill/dist')) // for quill css
+if (process.env.SERVER_TYPE == 'gateway') {
+  app.use(express.static('static'))
+  app.use(express.static('node_modules/quill/dist')) // for quill css
+}
 
 // Endpoints
-app.use('/users', require('./routes/userRoutes'))
-app.use('/collection', protect, require('./routes/collectionRoutes'))
-// app.use('/doc', protect, require('./routes/docRoutes'))
-app.use('/media', protect, require('./routes/mediaRoutes'))
-app.use('/index', protect, require('./routes/indexRoutes'))
+if (process.env.SERVER_TYPE == 'gateway') {
+  app.use('/users', require('./routes/userRoutes'))
+  app.use('/media', protect, require('./routes/mediaRoutes'))
+  app.use('/index', protect, require('./routes/indexRoutes'))
+}
+if (process.env.SERVER_TYPE == 'doc') {
+  app.use('/collection', protect, require('./routes/collectionRoutes'))
+  app.use('/doc', protect, require('./routes/docRoutes'))
+}
 
 // Frontend Home + Sign up
-app.get('/home', renderHome)
-app.get('/signup', (req, res) => {
-  res.render('pages/signup')
-})
-app.get('/', renderHome)
+if (process.env.SERVER_TYPE == 'gateway') {
+  app.get('/home', renderHome)
+  app.get('/signup', (req, res) => {
+    res.render('pages/signup')
+  })
+  app.get('/', renderHome)
+}
 
 // Error handler
 app.use(errorHandler)
