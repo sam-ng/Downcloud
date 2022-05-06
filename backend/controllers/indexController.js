@@ -143,7 +143,7 @@ const createIndex = asyncHandler(async (req, res) => {
         },
         suggest: {
           type: 'completion',
-          analyzer: CUSTOM_ANALYZER_NAME,
+          // analyzer: CUSTOM_ANALYZER_NAME,
           // fields: {
           //   text: {
           //     type: 'text',

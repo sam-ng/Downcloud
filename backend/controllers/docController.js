@@ -172,7 +172,9 @@ const openConnection = asyncHandler(async (req, res, next) => {
 
     // presence.destroy()
     doc.destroy()
-    res.socket.destroy()
+    if (res.socket) {
+      res.socket.destroy()
+    }
     res.end()
     rws.close()
 
