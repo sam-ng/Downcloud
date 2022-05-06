@@ -67,7 +67,7 @@ if (process.env.SERVER_TYPE == 'doc') {
 }
 
 // Frontend Home + Sign up
-if (process.env.SERVER_TYPE == 'gateway') {
+if (process.env.SERVER_TYPE == 'doc') {
   app.get('/home', renderHome)
   app.get('/signup', (req, res) => {
     res.render('pages/signup')
