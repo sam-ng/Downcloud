@@ -24,8 +24,8 @@ const getSearchResults = asyncHandler(async (req, res) => {
         },
       },
       highlight: {
-        number_of_fragments: 1,
-        fragment_size: 400,
+        // number_of_fragments: 2,
+        fragment_size: 0,
         fields: {
           content: {},
         },
