@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler')
 const connection = require('../config/connection')
 const DocumentMap = require('../models/documentMapModel')
 const { v4: uuidv4 } = require('uuid')
+const { axios } = require('axios')
 const { logger } = require('../config/logger')
 const { clients, docIDToDocs } = require('../server')
 let serverNumber = 1
@@ -102,20 +103,14 @@ const getList = asyncHandler(async (req, res) => {
 const renderHome = asyncHandler(async (req, res) => {
   if (req.session.auth) {
     // Render list of documents
-    const query = connection.createFetchQuery(
-      process.env.CONNECTION_COLLECTION,
-      { $sort: { '_m.mtime': -1 }, $limit: 10 } // sort documents by modified time in descending order and limit to 10
-    )
-    query.on('ready', async () => {
-      const docs = query.results
-      const documentMaps = await fetchDocumentMaps(docs)
-      res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/index', {
-        auth: req.session.auth,
-        docIDNameList: docs.map((doc) => ({
-          docID: doc.id,
-          name: documentMaps[doc.id],
-        })),
-      })
+    const response = await axios.get('/collection/list')
+    const docs = response.data
+    res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/index', {
+      auth: req.session.auth,
+      docIDNameList: docs.map((doc) => ({
+        docID: doc.id,
+        name: documentMaps[doc.id],
+      })),
     })
   } else {
     // Render login/signup page
