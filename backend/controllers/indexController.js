@@ -60,7 +60,7 @@ const getSuggestion = asyncHandler(async (req, res) => {
           // regex: searchText + '(.+)',
           completion: {
             field: 'suggest',
-            size: 3,
+            // size: 3,
             skip_duplicates: true,
           },
         },
@@ -147,7 +147,7 @@ const createIndex = asyncHandler(async (req, res) => {
         },
         suggest: {
           type: 'completion',
-          analyzer: CUSTOM_ANALYZER_NAME,
+          // analyzer: CUSTOM_ANALYZER_NAME,
           // fields: {
           //   text: {
           //     type: 'text',
