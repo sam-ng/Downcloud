@@ -24,8 +24,8 @@ const getSearchResults = asyncHandler(async (req, res) => {
         },
       },
       highlight: {
-        number_of_fragments: 1,
-        fragment_size: 400,
+        // number_of_fragments: 2,
+        fragment_size: 0,
         fields: {
           content: {},
         },
@@ -60,7 +60,7 @@ const getSuggestion = asyncHandler(async (req, res) => {
           // regex: searchText + '(.+)',
           completion: {
             field: 'suggest',
-            size: 3,
+            // size: 3,
             skip_duplicates: true,
           },
         },
@@ -91,6 +91,9 @@ const createIndex = asyncHandler(async (req, res) => {
   const response = await esClient.indices.create({
     index,
     settings: {
+      index: {
+        'highlight.max_analyzed_offset': 3000000,
+      },
       analysis: {
         // filter: {
         //   autocomplete_filter: {
@@ -134,6 +137,7 @@ const createIndex = asyncHandler(async (req, res) => {
         },
         content: {
           type: 'text',
+          // index_options: 'offsets',
           analyzer: CUSTOM_ANALYZER_NAME,
           // search_analyzer: CUSTOM_ANALYZER_NAME,
           // analyzer: 'autocomplete_analyzer',

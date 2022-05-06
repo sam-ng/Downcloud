@@ -26,7 +26,6 @@ const createDoc = asyncHandler(async (req, res, next) => {
   // logger.info('creating a new doc')
   const docID = uuidv4() + '-' + serverNumber
   serverNumber = (serverNumber % process.env.NUM_DOC_SERVERS) + 1
-  console.log(serverNumber)
   const doc = connection.get(process.env.CONNECTION_COLLECTION, docID)
 
   // Create doc
