@@ -170,8 +170,8 @@ const openConnection = asyncHandler(async (req, res, next) => {
   req.on('close', () => {
     logger.info(`client ${uid} closed the connection`)
 
-    // presence.destroy()
-    doc.destroy()
+    presence.destroy()
+    // doc.destroy()
     if (res.socket) {
       res.socket.destroy()
     }
