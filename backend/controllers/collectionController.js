@@ -105,12 +105,11 @@ const renderHome = asyncHandler(async (req, res) => {
     // Render list of documents
     const response = await axios.get('/collection/list')
     const docs = response.data
-    console.log(response.data)
     res.set('X-CSE356', '61f9c5ceca96e9505dd3f8b4').render('pages/index', {
       auth: req.session.auth,
       docIDNameList: docs.map((doc) => ({
         docID: doc.id,
-        name: documentMaps[doc.id],
+        name: doc.name,
       })),
     })
   } else {
